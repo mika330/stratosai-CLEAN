@@ -33,7 +33,7 @@ export function TopNav() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-1.5 shrink-0">
           <MapPin className="w-5 h-5 text-lm-orange" />
-          <span className="text-xl font-extrabold text-lm-orange tracking-tight">LocalMart</span>
+          <span className="text-xl font-extrabold text-lm-orange tracking-tight">Relist</span>
         </Link>
 
         {/* Search Bar */}
