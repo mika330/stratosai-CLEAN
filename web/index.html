@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Orbit — Habit Tracker</title>
+<style>
+/* ============================================================
+   BASELINE STYLES (demo harness — your app has its own)
+   ============================================================ */
+:root {
+  --bg: #f6f5fb; --card: #ffffff; --card-2: #edeaf7;
+  --text: #232333; --muted: #6f6e85; --border: #ddd9ec;
+  --accent: #7c5ce7; --accent-soft: #a29bfe; --gold: #e8a33d;
+  --green: #3dbb6e; --red: #e05252;
+  --hm-0: #e7e4f2; --hm-1: #cdc3ef; --hm-2: #a793e5; --hm-3: #8367da; --hm-4: #5f3fce;
+}
+body.dark {
+  --bg: #12121a; --card: #1a1a26; --card-2: #232333;
+  --text: #ecebf5; --muted: #8b8aa0; --border: #2d2d40;
+  --hm-0: #232333; --hm-1: #3c3163; --hm-2: #55449b; --hm-3: #6e55cf; --hm-4: #a29bfe;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg); color: var(--text); min-height: 100vh; transition: background .3s; }
+.wrap { max-width: 680px; margin: 0 auto; padding: 24px 16px 80px; }
+header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+header h1 { font-size: 1.4rem; margin-right: auto; }
+button { cursor: pointer; font: inherit; }
+.btn { background: var(--card-2); color: var(--text); border: 1px solid var(--border);
+  border-radius: 10px; padding: 8px 14px; font-size: .88rem; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.tabs { display: flex; gap: 6px; margin: 14px 0 18px; }
+.tab { flex: 1; padding: 9px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--card); color: var(--muted); }
+.tab.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+  padding: 16px; margin-bottom: 14px; }
+.muted { color: var(--muted); font-size: .82rem; }
+h2 { font-size: 1.02rem; margin-bottom: 10px; }
+.habit-row { display: flex; align-items: center; gap: 12px; padding: 10px 0;
+  border-bottom: 1px solid var(--border); }
+.habit-row:last-child { border-bottom: none; }
+.h-icon { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center;
+  font-size: 1.15rem; flex-shrink: 0; }
+.h-name { flex: 1; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; }
+.h-streak { font-size: .82rem; color: var(--muted); white-space: nowrap; }
+.h-check { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--border);
+  background: transparent; color: transparent; font-size: 1rem; flex-shrink: 0; transition: all .15s; }
+.h-check:hover { border-color: var(--accent); }
+.h-check.done { background: var(--accent); border-color: var(--accent); color: #fff; }
+.h-del { border: none; background: none; color: var(--muted); font-size: .95rem; padding: 4px; }
+.h-del:hover { color: var(--red); }
+.add-form { display: flex; gap: 8px; flex-wrap: wrap; }
+.add-form input[type=text] { flex: 1; min-width: 160px; padding: 9px 12px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--card-2); color: var(--text); font: inherit; }
+.add-form select, .add-form input[type=color] { border: 1px solid var(--border); border-radius: 10px;
+  background: var(--card-2); color: var(--text); padding: 6px; height: 40px; }
+.week-bar { height: 10px; border-radius: 5px; background: var(--card-2); overflow: hidden; margin-top: 8px; }
+.week-bar i { display: block; height: 100%; background: var(--accent); border-radius: 5px;
+  transition: width .4s; }
+.lb-row { display: flex; align-items: center; gap: 10px; padding: 8px 0;
+  border-bottom: 1px solid var(--border); font-size: .92rem; }
+.lb-row:last-child { border-bottom: none; }
+.lb-rank { width: 26px; text-align: center; font-weight: 700; color: var(--muted); }
+#confetti { position: fixed; inset: 0; pointer-events: none; z-index: 99; }
+.hidden { display: none !important; }
+
+/* ============================================================
+   FEATURE 1 — GAMIFICATION ("Orbit XP")  [copy this block]
+   ============================================================ */
+.xp-widget { display: flex; align-items: center; gap: 10px; background: var(--card);
+  border: 1px solid var(--border); border-radius: 12px; padding: 8px 14px; width: 100%; }
+.xp-level { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-soft)); color: #fff;
+  font-weight: 800; font-size: .95rem; flex-shrink: 0; }
+.xp-meta { flex: 1; min-width: 0; }
+.xp-title { font-size: .82rem; font-weight: 700; }
+.xp-bar { height: 8px; border-radius: 4px; background: var(--card-2); margin-top: 5px; overflow: hidden; }
+.xp-bar i { display: block; height: 100%; border-radius: 4px; width: 0;
+  background: linear-gradient(90deg, var(--accent), var(--accent-soft)); transition: width .5s ease; }
+.xp-nums { font-size: .72rem; color: var(--muted); white-space: nowrap; }
+.badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
+.badge { text-align: center; padding: 12px 6px; border-radius: 12px; border: 1px solid var(--border);
+  background: var(--card-2); }
+.badge .b-icon { font-size: 1.6rem; filter: grayscale(1); opacity: .35; }
+.badge.earned .b-icon { filter: none; opacity: 1; }
+.badge .b-name { font-size: .72rem; font-weight: 700; margin-top: 6px; }
+.badge .b-desc { font-size: .64rem; color: var(--muted); margin-top: 2px; }
+.badge.earned { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
+.xp-toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(80px);
+  background: var(--card); color: var(--text); border: 1px solid var(--gold); border-radius: 14px;
+  padding: 12px 20px; font-size: .9rem; font-weight: 600; box-shadow: 0 8px 30px rgba(0,0,0,.25);
+  opacity: 0; transition: all .35s cubic-bezier(.2,.9,.3,1.2); z-index: 100; }
+.xp-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+/* ============================================================
+   FEATURE 2 — HABIT TEMPLATES LIBRARY  [copy this block]
+   ============================================================ */
+.tpl-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: grid;
+  place-items: center; z-index: 50; }
+.tpl-modal { background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+  padding: 20px; width: min(480px, 92vw); max-height: 84vh; overflow-y: auto; }
+.tpl-modal h2 { margin-bottom: 4px; }
+.tpl-card { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-top: 12px; }
+.tpl-head { display: flex; align-items: center; gap: 8px; }
+.tpl-head .t-name { font-weight: 700; flex: 1; }
+.tpl-habits { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.tpl-chip { font-size: .74rem; background: var(--card-2); border: 1px solid var(--border);
+  border-radius: 999px; padding: 3px 10px; }
+.tpl-import { background: var(--accent); color: #fff; border: none; border-radius: 8px;
+  padding: 6px 12px; font-size: .8rem; font-weight: 600; }
+.tpl-import[disabled] { background: var(--green); cursor: default; }
+.tpl-close { width: 100%; margin-top: 14px; }
+
+/* ============================================================
+   FEATURE 3 — ANALYTICS DASHBOARD  [copy this block]
+   ============================================================ */
+.an-heatmap { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 11px);
+  gap: 3px; overflow-x: auto; padding-bottom: 4px; }
+.an-cell { width: 11px; height: 11px; border-radius: 3px; background: var(--hm-0); }
+.an-l1 { background: var(--hm-1); } .an-l2 { background: var(--hm-2); }
+.an-l3 { background: var(--hm-3); } .an-l4 { background: var(--hm-4); }
+.an-legend { display: flex; align-items: center; gap: 4px; margin-top: 8px; font-size: .72rem;
+  color: var(--muted); }
+.an-legend .an-cell { display: inline-block; }
+.an-weeks { display: flex; gap: 18px; align-items: flex-end; height: 110px; margin-top: 6px; }
+.an-wk { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+.an-wk-bar { width: 100%; max-width: 72px; border-radius: 8px 8px 3px 3px; background: var(--accent-soft);
+  transition: height .4s; min-height: 4px; }
+.an-wk-bar.current { background: var(--accent); }
+.an-wk-label { font-size: .74rem; color: var(--muted); }
+.an-wk-val { font-size: .82rem; font-weight: 700; }
+.an-insight { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0;
+  border-bottom: 1px solid var(--border); font-size: .88rem; }
+.an-insight:last-child { border-bottom: none; }
+.an-insight .i-icon { font-size: 1.05rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🪐 Orbit</h1>
+    <button class="btn" id="dark-toggle" title="Toggle dark mode">🌙</button>
+    <button class="btn" id="export-btn">Export</button>
+    <!-- FEATURE 2 anchor -->
+    <button class="btn" id="tpl-open">📦 Templates</button>
+  </header>
+
+  <!-- FEATURE 1 anchor: XP widget mounts here -->
+  <div id="xp-anchor"></div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="today">Today</button>
+    <button class="tab" data-tab="stats">Stats</button>
+  </div>
+
+  <section id="tab-today">
+    <div class="card">
+      <h2>Add a habit</h2>
+      <form class="add-form" id="add-form">
+        <input type="text" id="add-name" placeholder="e.g. Morning run" maxlength="50" required />
+        <select id="add-icon"></select>
+        <input type="color" id="add-color" value="#7c5ce7" title="Habit color" />
+        <button class="btn primary" type="submit">Add</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2 id="today-head">Today</h2>
+      <div id="habit-list"></div>
+      <p class="muted" id="empty-msg">No habits yet — add one above or import a template 📦</p>
+      <div class="week-bar" title="This week's completion"><i id="week-fill"></i></div>
+      <p class="muted" id="week-label" style="margin-top:6px"></p>
+    </div>
+  </section>
+
+  <section id="tab-stats" class="hidden">
+    <div class="card">
+      <h2>🏆 Leaderboard</h2>
+      <div id="leaderboard"></div>
+    </div>
+
+    <!-- FEATURE 3 anchors -->
+    <div class="card">
+      <h2>📅 Last 6 months</h2>
+      <div id="an-heatmap"></div>
+    </div>
+    <div class="card">
+      <h2>📊 Week over week</h2>
+      <div id="an-weeks"></div>
+    </div>
+    <div class="card">
+      <h2>🔮 Habit insights</h2>
+      <div id="an-insights"></div>
+    </div>
+
+    <!-- FEATURE 1 anchor: badge case -->
+    <div class="card">
+      <h2>🎖️ Achievements</h2>
+      <div id="badge-anchor"></div>
+    </div>
+  </section>
+</div>
+<canvas id="confetti"></canvas>
+
+<script>
+/* ============================================================
+   BASELINE APP (demo harness standing in for your index.html)
+   + OrbitBridge: the tiny adapter the 3 feature modules use.
+   In YOUR app: implement OrbitBridge against your own state.
+   ============================================================ */
+(() => {
+  'use strict';
+  const LS = { habits: 'orbit.habits', checkins: 'orbit.checkins', settings: 'orbit.settings' };
+  const load = (k, f) => { try { return JSON.parse(localStorage.getItem(k)) ?? f; } catch { return f; } };
+  const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+  let habits = load(LS.habits, []);          // [{id, name, icon, color, createdAt}]
+  let checkins = load(LS.checkins, {});      // { habitId: ['YYYY-MM-DD', ...] }
+  let settings = load(LS.settings, { dark: true });
+
+  const dateKey = (d = new Date()) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const addDays = (key, n) => { const [y, m, d] = key.split('-').map(Number);
+    const dt = new Date(y, m - 1, d + n); return dateKey(dt); };
+
+  // --- OrbitBridge: THE adapter. Feature modules only ever talk to this. ---
+  const listeners = {};
+  window.OrbitBridge = {
+    getHabits: () => habits.map(h => ({ ...h })),
+    getCheckins: (id) => (checkins[id] || []).slice(),
+    addHabit: ({ name, icon, color }) => {
+      const h = { id: crypto.randomUUID(), name, icon, color, createdAt: dateKey() };
+      habits.push(h); checkins[h.id] = []; persist(); render();
+      window.OrbitBridge.emit('habits-changed', {});
+      return h.id;
+    },
+    todayKey: () => dateKey(),
+    addDaysKey: addDays,
+    on: (ev, fn) => { (listeners[ev] ??= []).push(fn); },
+    emit: (ev, data) => { (listeners[ev] || []).forEach(fn => fn(data)); },
+  };
+
+  function persist() { save(LS.habits, habits); save(LS.checkins, checkins); save(LS.settings, settings); }
+
+  function currentStreak(dates, today = dateKey()) {
+    const set = new Set(dates);
+    let k = set.has(today) ? today : addDays(today, -1);
+    let n = 0;
+    while (set.has(k)) { n++; k = addDays(k, -1); }
+    return n;
+  }
+  function longestStreak(dates) {
+    const sorted = [...dates].sort();
+    let best = 0, run = 0, prev = null;
+    for (const d of sorted) {
+      run = (prev && addDays(prev, 1) === d) ? run + 1 : 1;
+      if (run > best) best = run;
+      prev = d;
+    }
+    return best;
+  }
+
+  // --- confetti (lite) ---
+  const canvas = document.getElementById('confetti');
+  const ctx = canvas.getContext('2d');
+  function confetti() {
+    canvas.width = innerWidth; canvas.height = innerHeight;
+    const parts = Array.from({ length: 120 }, () => ({
+      x: Math.random() * canvas.width, y: -20 - Math.random() * 200,
+      vy: 2 + Math.random() * 3, vx: -1.5 + Math.random() * 3,
+      s: 5 + Math.random() * 6, r: Math.random() * Math.PI,
+      c: ['#7c5ce7', '#a29bfe', '#e8a33d', '#3dbb6e', '#e05252'][Math.floor(Math.random() * 5)],
+    }));
+    let t = 0;
+    (function tick() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const p of parts) {
+        p.x += p.vx; p.y += p.vy; p.r += 0.08;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
+        ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s); ctx.restore();
+      }
+      if (++t < 140) requestAnimationFrame(tick);
+      else ctx.clearRect(0, 0, canvas.width, canvas.height);
+    })();
+  }
+
+  // --- rendering ---
+  const $ = s => document.querySelector(s);
+  const ICONS = ['⭐', '🏃', '📚', '💧', '🧘', '💪', '🛏️', '🥗', '✍️', '🌅', '💊', '🎯'];
+  $('#add-icon').innerHTML = ICONS.map(i => `<option>${i}</option>`).join('');
+
+  function render() {
+    const today = dateKey();
+    document.body.classList.toggle('dark', settings.dark);
+    $('#today-head').textContent = new Date().toLocaleDateString(undefined,
+      { weekday: 'long', month: 'long', day: 'numeric' });
+
+    const list = $('#habit-list');
+    list.innerHTML = '';
+    $('#empty-msg').classList.toggle('hidden', habits.length > 0);
+    for (const h of habits) {
+      const dates = checkins[h.id] || [];
+      const done = dates.includes(today);
+      const row = document.createElement('div');
+      row.className = 'habit-row';
+      const streak = currentStreak(dates);
+      row.innerHTML =
+        `<div class="h-icon" style="background:${h.color}33">${h.icon}</div>` +
+        `<div class="h-name">${h.name.replace(/</g, '&lt;')}</div>` +
+        `<span class="h-streak">${streak ? '🔥 ' + streak : ''}</span>` +
+        `<button class="h-del" title="Delete">✕</button>` +
+        `<button class="h-check ${done ? 'done' : ''}">✓</button>`;
+      row.querySelector('.h-check').onclick = () => toggle(h.id);
+      row.querySelector('.h-del').onclick = () => {
+        if (confirm(`Delete “${h.name}” and its history?`)) {
+          habits = habits.filter(x => x.id !== h.id); delete checkins[h.id];
+          persist(); render(); window.OrbitBridge.emit('habits-changed', {});
+        }
+      };
+      list.appendChild(row);
+    }
+
+    // weekly %
+    let due = 0, done = 0;
+    for (let i = 0; i < 7; i++) {
+      const k = addDays(today, -i);
+      for (const h of habits) {
+        if (k < h.createdAt) continue;
+        due++;
+        if ((checkins[h.id] || []).includes(k)) done++;
+      }
+    }
+    const pct = due ? Math.round(done / due * 100) : 0;
+    $('#week-fill').style.width = pct + '%';
+    $('#week-label').textContent = `This week: ${done}/${due} check-ins (${pct}%)`;
+
+    // leaderboard
+    const lb = $('#leaderboard');
+    const ranked = habits
+      .map(h => ({ h, cur: currentStreak(checkins[h.id] || []), best: longestStreak(checkins[h.id] || []),
+                   total: (checkins[h.id] || []).length }))
+      .sort((a, b) => b.cur - a.cur || b.total - a.total);
+    lb.innerHTML = ranked.length ? '' : '<p class="muted">Check some habits off to enter the race 🏁</p>';
+    ranked.forEach((r, i) => {
+      const row = document.createElement('div');
+      row.className = 'lb-row';
+      row.innerHTML = `<span class="lb-rank">${['🥇', '🥈', '🥉'][i] || i + 1}</span>` +
+        `<span>${r.h.icon}</span><span class="h-name">${r.h.name.replace(/</g, '&lt;')}</span>` +
+        `<span class="muted">best ${r.best}</span><b>🔥 ${r.cur}</b>`;
+      lb.appendChild(row);
+    });
+
+    window.OrbitBridge.emit('render', {});
+  }
+
+  function toggle(id) {
+    const today = dateKey();
+    const arr = checkins[id] ||= [];
+    const i = arr.indexOf(today);
+    const completed = i < 0;
+    if (completed) arr.push(today); else arr.splice(i, 1);
+    persist();
+    if (completed && habits.length &&
+        habits.every(h => (checkins[h.id] || []).includes(today))) confetti();
+    render();
+    window.OrbitBridge.emit('checkin', { habitId: id, date: today, completed });
+  }
+
+  $('#add-form').onsubmit = (e) => {
+    e.preventDefault();
+    const name = $('#add-name').value.trim();
+    if (!name) return;
+    window.OrbitBridge.addHabit({ name, icon: $('#add-icon').value, color: $('#add-color').value });
+    $('#add-name').value = '';
+  };
+  $('#dark-toggle').onclick = () => { settings.dark = !settings.dark; persist(); render(); };
+  $('#export-btn').onclick = () => {
+    const blob = new Blob([JSON.stringify({ habits, checkins, exportedAt: new Date().toISOString() }, null, 2)],
+      { type: 'application/json' });
+    const a = Object.assign(document.createElement('a'),
+      { href: URL.createObjectURL(blob), download: `orbit-export-${dateKey()}.json` });
+    a.click(); URL.revokeObjectURL(a.href);
+  };
+  document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === t));
+    $('#tab-today').classList.toggle('hidden', t.dataset.tab !== 'today');
+    $('#tab-stats').classList.toggle('hidden', t.dataset.tab !== 'stats');
+    window.OrbitBridge.emit('render', {});
+  });
+
+  render();
+})();
+</script>
+
+<script>
+/* ============================================================
+   FEATURE 1 — GAMIFICATION: "Orbit XP"  [copy this block]
+   XP, levels, and achievement badges. Everything is RECOMPUTED
+   deterministically from habits + check-ins, so undo/delete can
+   never corrupt totals — only newly-earned badges are stored to
+   know when to toast.
+   Requires: OrbitBridge (getHabits, getCheckins, todayKey,
+   addDaysKey, on) and anchors #xp-anchor + #badge-anchor.
+   ============================================================ */
+(() => {
+  'use strict';
+  const B = window.OrbitBridge;
+  const LS_SEEN = 'orbit.xp.seen'; // badge ids already celebrated
+
+  // --- XP rules -------------------------------------------------
+  const XP_PER_CHECKIN = 10;
+  const XP_PERFECT_DAY = 25;   // every habit done on one day (2+ habits)
+  const XP_PER_BADGE = 50;
+
+  const longestStreak = (dates) => {
+    const sorted = [...dates].sort();
+    let best = 0, run = 0, prev = null;
+    for (const d of sorted) {
+      run = (prev && B.addDaysKey(prev, 1) === d) ? run + 1 : 1;
+      if (run > best) best = run;
+      prev = d;
+    }
+    return best;
+  };
+
+  function computeState() {
+    const habits = B.getHabits();
+    const byHabit = habits.map(h => ({ h, dates: B.getCheckins(h.id) }));
+    const totalCheckins = byHabit.reduce((n, x) => n + x.dates.length, 0);
+    const bestStreak = Math.max(0, ...byHabit.map(x => longestStreak(x.dates)));
+
+    // perfect days: dates where every habit that existed was completed
+    const byDate = new Map();
+    for (const { dates } of byHabit)
+      for (const d of dates) byDate.set(d, (byDate.get(d) || 0) + 1);
+    let perfectDays = 0, perfectRun = 0, bestPerfectRun = 0, prevPerfect = null;
+    for (const d of [...byDate.keys()].sort()) {
+      const existing = habits.filter(h => h.createdAt <= d).length;
+      if (existing >= 2 && byDate.get(d) === existing) {
+        perfectDays++;
+        perfectRun = (prevPerfect && B.addDaysKey(prevPerfect, 1) === d) ? perfectRun + 1 : 1;
+        bestPerfectRun = Math.max(bestPerfectRun, perfectRun);
+        prevPerfect = d;
+      }
+    }
+
+    const facts = { totalCheckins, bestStreak, perfectDays, bestPerfectRun, habitCount: habits.length };
+    const earned = BADGES.filter(b => b.test(facts));
+    const xp = totalCheckins * XP_PER_CHECKIN + perfectDays * XP_PERFECT_DAY + earned.length * XP_PER_BADGE;
+
+    // level: advancing from level L needs 100*L XP → cumulative 50*L*(L-1)
+    let level = 1;
+    while (50 * (level + 1) * level <= xp) level++;
+    const floor = 50 * level * (level - 1);
+    const ceil = 50 * (level + 1) * level;
+    return { xp, level, into: xp - floor, span: ceil - floor, earned, facts };
+  }
+
+  const BADGES = [
+    { id: 'first',    icon: '🌱', name: 'First Orbit',    desc: 'Complete your first check-in',
+      test: f => f.totalCheckins >= 1 },
+    { id: 'week',     icon: '🔥', name: 'One Week Strong', desc: 'Reach a 7-day streak',
+      test: f => f.bestStreak >= 7 },
+    { id: 'month',    icon: '🌕', name: 'Full Orbit',      desc: 'Reach a 30-day streak',
+      test: f => f.bestStreak >= 30 },
+    { id: 'century',  icon: '💯', name: 'Centurion',       desc: '100 total check-ins',
+      test: f => f.totalCheckins >= 100 },
+    { id: 'perfect7', icon: '✨', name: 'Perfect Week',    desc: '7 perfect days in a row',
+      test: f => f.bestPerfectRun >= 7 },
+    { id: 'collector',icon: '🧺', name: 'Collector',       desc: 'Track 5 habits at once',
+      test: f => f.habitCount >= 5 },
+  ];
+
+  // --- UI -------------------------------------------------------
+  const anchor = document.getElementById('xp-anchor');
+  anchor.innerHTML =
+    `<div class="xp-widget">
+       <div class="xp-level" id="xp-level">1</div>
+       <div class="xp-meta">
+         <div class="xp-title" id="xp-title">Level 1</div>
+         <div class="xp-bar"><i id="xp-fill"></i></div>
+       </div>
+       <div class="xp-nums" id="xp-nums"></div>
+     </div>`;
+
+  const badgeAnchor = document.getElementById('badge-anchor');
+
+  let toastTimer = null;
+  function toast(msg) {
+    let el = document.querySelector('.xp-toast');
+    if (!el) { el = document.createElement('div'); el.className = 'xp-toast'; document.body.appendChild(el); }
+    el.textContent = msg;
+    requestAnimationFrame(() => el.classList.add('show'));
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+  }
+
+  let lastLevel = null;
+  function refresh() {
+    const s = computeState();
+    document.getElementById('xp-level').textContent = s.level;
+    document.getElementById('xp-title').textContent =
+      `Level ${s.level} · ${['Stardust','Satellite','Moonwalker','Astronaut','Comet','Supernova'][Math.min(s.level - 1, 5)]}`;
+    document.getElementById('xp-fill').style.width = Math.round(s.into / s.span * 100) + '%';
+    document.getElementById('xp-nums').textContent = `${s.xp} XP · ${s.span - s.into} to next`;
+
+    badgeAnchor.innerHTML = '';
+    const earnedIds = new Set(s.earned.map(b => b.id));
+    const grid = document.createElement('div');
+    grid.className = 'badge-grid';
+    for (const b of BADGES) {
+      const el = document.createElement('div');
+      el.className = 'badge' + (earnedIds.has(b.id) ? ' earned' : '');
+      el.innerHTML = `<div class="b-icon">${b.icon}</div><div class="b-name">${b.name}</div>` +
+                     `<div class="b-desc">${b.desc}</div>`;
+      grid.appendChild(el);
+    }
+    badgeAnchor.appendChild(grid);
+
+    // celebrate newly earned badges & level-ups
+    let seen;
+    try { seen = new Set(JSON.parse(localStorage.getItem(LS_SEEN)) || []); } catch { seen = new Set(); }
+    for (const b of s.earned) {
+      if (!seen.has(b.id)) { toast(`${b.icon} Badge unlocked: ${b.name}! +${XP_PER_BADGE} XP`); seen.add(b.id); }
+    }
+    localStorage.setItem(LS_SEEN, JSON.stringify([...seen]));
+    if (lastLevel !== null && s.level > lastLevel) toast(`🚀 Level up! You reached level ${s.level}`);
+    lastLevel = s.level;
+  }
+
+  B.on('render', refresh);
+  B.on('checkin', refresh);
+  B.on('habits-changed', refresh);
+  refresh();
+})();
+</script>
+
+<script>
+/* ============================================================
+   FEATURE 2 — HABIT TEMPLATES LIBRARY  [copy this block]
+   Pre-built routines imported in one click. Duplicate names
+   (case-insensitive) are skipped so re-importing is safe.
+   Requires: OrbitBridge (getHabits, addHabit) and a trigger
+   button with id="tpl-open".
+   ============================================================ */
+(() => {
+  'use strict';
+  const B = window.OrbitBridge;
+
+  const TEMPLATES = [
+    { id: 'morning', icon: '🌅', name: 'Morning Routine',
+      desc: 'Start every day with intention',
+      habits: [
+        { name: 'Wake up before 7am', icon: '⏰', color: '#e8a33d' },
+        { name: 'Stretch 5 minutes',  icon: '🤸', color: '#3dbb6e' },
+        { name: 'Meditate 10 min',    icon: '🧘', color: '#7c5ce7' },
+        { name: 'Healthy breakfast',  icon: '🥣', color: '#e05252' },
+      ] },
+    { id: 'fitness', icon: '💪', name: 'Fitness Routine',
+      desc: 'Build strength and energy',
+      habits: [
+        { name: 'Workout 30 min',     icon: '🏋️', color: '#e05252' },
+        { name: 'Drink 8 glasses of water', icon: '💧', color: '#3d9fe8' },
+        { name: '10k steps',          icon: '🚶', color: '#3dbb6e' },
+        { name: 'Sleep before 11pm',  icon: '🛏️', color: '#7c5ce7' },
+      ] },
+    { id: 'productivity', icon: '🎯', name: 'Productivity Routine',
+      desc: 'Deep focus, every day',
+      habits: [
+        { name: 'Plan the day',       icon: '📝', color: '#e8a33d' },
+        { name: '2h deep work',       icon: '🧠', color: '#7c5ce7' },
+        { name: 'Inbox zero',         icon: '📬', color: '#3d9fe8' },
+        { name: 'Evening review',     icon: '🌙', color: '#55449b' },
+      ] },
+    { id: 'health', icon: '🍎', name: 'Health Routine',
+      desc: 'Small habits, big health wins',
+      habits: [
+        { name: 'Take vitamins',      icon: '💊', color: '#e8a33d' },
+        { name: 'Sleep 8 hours',      icon: '😴', color: '#7c5ce7' },
+        { name: 'No junk food',       icon: '🥗', color: '#3dbb6e' },
+        { name: 'Walk outside',       icon: '🌳', color: '#3d9fe8' },
+      ] },
+  ];
+
+  let backdrop = null;
+
+  function importTemplate(tpl, btn) {
+    const existing = new Set(B.getHabits().map(h => h.name.trim().toLowerCase()));
+    let added = 0;
+    for (const h of tpl.habits) {
+      if (existing.has(h.name.trim().toLowerCase())) continue;
+      B.addHabit(h);
+      added++;
+    }
+    btn.disabled = true;
+    btn.textContent = added ? `✓ Added ${added}` : '✓ Already added';
+  }
+
+  function open() {
+    backdrop = document.createElement('div');
+    backdrop.className = 'tpl-backdrop';
+    const modal = document.createElement('div');
+    modal.className = 'tpl-modal';
+    modal.innerHTML = `<h2>📦 Habit templates</h2>
+      <p class="muted">Import a full routine with one click — duplicates are skipped.</p>`;
+
+    const existing = new Set(B.getHabits().map(h => h.name.trim().toLowerCase()));
+    for (const tpl of TEMPLATES) {
+      const card = document.createElement('div');
+      card.className = 'tpl-card';
+      const allIn = tpl.habits.every(h => existing.has(h.name.trim().toLowerCase()));
+      card.innerHTML =
+        `<div class="tpl-head"><span>${tpl.icon}</span><span class="t-name">${tpl.name}</span>
+           <button class="tpl-import" ${allIn ? 'disabled' : ''}>${allIn ? '✓ Imported' : 'Import'}</button>
+         </div>
+         <div class="muted">${tpl.desc}</div>
+         <div class="tpl-habits">${tpl.habits.map(h => `<span class="tpl-chip">${h.icon} ${h.name}</span>`).join('')}</div>`;
+      card.querySelector('.tpl-import').onclick = (e) => importTemplate(tpl, e.target);
+      modal.appendChild(card);
+    }
+
+    const close = document.createElement('button');
+    close.className = 'btn tpl-close';
+    close.textContent = 'Done';
+    close.onclick = closeModal;
+    modal.appendChild(close);
+
+    backdrop.appendChild(modal);
+    backdrop.onclick = (e) => { if (e.target === backdrop) closeModal(); };
+    document.body.appendChild(backdrop);
+  }
+  function closeModal() { backdrop?.remove(); backdrop = null; }
+
+  document.getElementById('tpl-open').onclick = open;
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+})();
+</script>
+
+<script>
+/* ============================================================
+   FEATURE 3 — ADVANCED ANALYTICS DASHBOARD  [copy this block]
+   GitHub-style heatmap, week-over-week bars, and rule-based
+   "Habit Insights" computed from your existing check-in data.
+   Requires: OrbitBridge (getHabits, getCheckins, todayKey,
+   addDaysKey, on) and anchors #an-heatmap, #an-weeks, #an-insights.
+   ============================================================ */
+(() => {
+  'use strict';
+  const B = window.OrbitBridge;
+  const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+  function collect() {
+    const habits = B.getHabits();
+    return habits.map(h => ({ ...h, dates: new Set(B.getCheckins(h.id)) }));
+  }
+
+  // completion for one day: habits existing that day vs habits done
+  function dayStats(habits, key) {
+    let due = 0, done = 0;
+    for (const h of habits) {
+      if (h.createdAt > key) continue;
+      due++;
+      if (h.dates.has(key)) done++;
+    }
+    return { due, done };
+  }
+
+  // ---- heatmap (182 days) ----
+  function renderHeatmap(habits) {
+    const grid = document.getElementById('an-heatmap');
+    grid.innerHTML = '';
+    const wrap = document.createElement('div');
+    wrap.className = 'an-heatmap';
+    const today = B.todayKey();
+    const start = B.addDaysKey(today, -181);
+    // pad so columns are weeks starting Monday
+    const startDow = new Date(start + 'T00:00').getDay();
+    for (let i = 0; i < (startDow + 6) % 7; i++) {
+      const pad = document.createElement('i');
+      pad.className = 'an-cell';
+      pad.style.visibility = 'hidden';
+      wrap.appendChild(pad);
+    }
+    for (let k = start; k <= today; k = B.addDaysKey(k, 1)) {
+      const { due, done } = dayStats(habits, k);
+      const r = due ? done / due : 0;
+      const level = !due || !done ? 0 : r >= 1 ? 4 : r >= 0.75 ? 3 : r >= 0.5 ? 2 : 1;
+      const cell = document.createElement('i');
+      cell.className = 'an-cell' + (level ? ' an-l' + level : '');
+      cell.title = due ? `${k} — ${done}/${due} completed` : `${k} — no habits yet`;
+      wrap.appendChild(cell);
+    }
+    grid.appendChild(wrap);
+    const legend = document.createElement('div');
+    legend.className = 'an-legend';
+    legend.innerHTML = 'Less <i class="an-cell"></i><i class="an-cell an-l1"></i>' +
+      '<i class="an-cell an-l2"></i><i class="an-cell an-l3"></i><i class="an-cell an-l4"></i> More';
+    grid.appendChild(legend);
+  }
+
+  // ---- week-over-week ----
+  function weekRate(habits, endKey) {
+    let due = 0, done = 0;
+    for (let i = 0; i < 7; i++) {
+      const s = dayStats(habits, B.addDaysKey(endKey, -i));
+      due += s.due; done += s.done;
+    }
+    return { due, done, rate: due ? done / due : 0 };
+  }
+
+  function renderWeeks(habits) {
+    const el = document.getElementById('an-weeks');
+    const today = B.todayKey();
+    const weeks = [3, 2, 1, 0].map(n => {
+      const end = B.addDaysKey(today, -7 * n);
+      return { label: n === 0 ? 'This week' : n === 1 ? 'Last week' : `${n} wks ago`,
+               ...weekRate(habits, end), current: n === 0 };
+    });
+    el.innerHTML = '';
+    const row = document.createElement('div');
+    row.className = 'an-weeks';
+    for (const w of weeks) {
+      const col = document.createElement('div');
+      col.className = 'an-wk';
+      col.innerHTML =
+        `<span class="an-wk-val">${Math.round(w.rate * 100)}%</span>
+         <div class="an-wk-bar ${w.current ? 'current' : ''}" style="height:${Math.max(4, w.rate * 70)}px"
+              title="${w.done}/${w.due} check-ins"></div>
+         <span class="an-wk-label">${w.label}</span>`;
+      row.appendChild(col);
+    }
+    el.appendChild(row);
+  }
+
+  // ---- insights ----
+  function buildInsights(habits) {
+    const out = [];
+    const today = B.todayKey();
+    const totalCheckins = habits.reduce((n, h) => n + h.dates.size, 0);
+    if (!habits.length || !totalCheckins) {
+      return [{ icon: '🔭', text: 'Not enough data yet — check in for a few days and insights will appear here.' }];
+    }
+
+    // weekday performance over last 28 days
+    const byDow = Array.from({ length: 7 }, () => ({ due: 0, done: 0 }));
+    for (let i = 0; i < 28; i++) {
+      const k = B.addDaysKey(today, -i);
+      const dow = new Date(k + 'T00:00').getDay();
+      const s = dayStats(habits, k);
+      byDow[dow].due += s.due; byDow[dow].done += s.done;
+    }
+    const rated = byDow.map((s, dow) => ({ dow, rate: s.due ? s.done / s.due : 0, due: s.due }))
+      .filter(x => x.due >= 4);
+    if (rated.length >= 2) {
+      const best = rated.reduce((a, b) => (b.rate > a.rate ? b : a));
+      const worst = rated.reduce((a, b) => (b.rate < a.rate ? b : a));
+      if (best.rate > 0 && best.dow !== worst.dow) {
+        out.push({ icon: '📈', text: `${DAY_NAMES[best.dow]}s are your power day — ${Math.round(best.rate * 100)}% completion over the last 4 weeks.` });
+        if (best.rate - worst.rate >= 0.25)
+          out.push({ icon: '🧲', text: `${DAY_NAMES[worst.dow]}s are your weak spot (${Math.round(worst.rate * 100)}%). Try scheduling your easiest habit first that day.` });
+      }
+    }
+
+    // streak encouragement
+    const longestStreak = (dates) => {
+      const sorted = [...dates].sort();
+      let best = 0, run = 0, prev = null;
+      for (const d of sorted) {
+        run = (prev && B.addDaysKey(prev, 1) === d) ? run + 1 : 1;
+        if (run > best) best = run;
+        prev = d;
+      }
+      return best;
+    };
+    const currentStreak = (dates) => {
+      let k = dates.has(today) ? today : B.addDaysKey(today, -1);
+      let n = 0;
+      while (dates.has(k)) { n++; k = B.addDaysKey(k, -1); }
+      return n;
+    };
+    for (const h of habits) {
+      const best = longestStreak(h.dates);
+      const cur = currentStreak(h.dates);
+      if (best >= 5 && cur > 0 && cur < best) {
+        out.push({ icon: '🏔️', text: `Your best “${h.name}” streak was ${best} days — you're at ${cur} now. Beat it!` });
+        break;
+      }
+    }
+
+    // failure pattern: previously active habit gone quiet
+    for (const h of habits) {
+      if (h.dates.size < 3) continue;
+      let missed = 0;
+      for (let i = 1; i <= 7; i++) {
+        if (h.dates.has(B.addDaysKey(today, -i))) break;
+        missed++;
+      }
+      if (missed >= 3) {
+        out.push({ icon: '🕳️', text: `“${h.name}” has slipped for ${missed}+ days. A 2-minute version today restarts the orbit.` });
+        break;
+      }
+    }
+
+    // momentum
+    const thisW = weekRate(habits, today);
+    const lastW = weekRate(habits, B.addDaysKey(today, -7));
+    if (lastW.due > 0 && thisW.due > 0) {
+      const diff = Math.round((thisW.rate - lastW.rate) * 100);
+      if (diff >= 10) out.push({ icon: '🚀', text: `Momentum is up — completion is ${diff} points higher than last week.` });
+      else if (diff <= -10) out.push({ icon: '🪂', text: `Completion dipped ${-diff} points vs last week. Pick ONE habit to protect today.` });
+    }
+
+    if (totalCheckins >= 10)
+      out.push({ icon: '🛰️', text: `${totalCheckins} total check-ins logged. Every one keeps you in orbit.` });
+    return out.slice(0, 5);
+  }
+
+  function renderInsights(habits) {
+    const el = document.getElementById('an-insights');
+    el.innerHTML = '';
+    for (const ins of buildInsights(habits)) {
+      const row = document.createElement('div');
+      row.className = 'an-insight';
+      row.innerHTML = `<span class="i-icon">${ins.icon}</span><span>${ins.text}</span>`;
+      el.appendChild(row);
+    }
+  }
+
+  function refresh() {
+    const habits = collect();
+    renderHeatmap(habits);
+    renderWeeks(habits);
+    renderInsights(habits);
+  }
+
+  B.on('render', refresh);
+  B.on('checkin', refresh);
+  B.on('habits-changed', refresh);
+  refresh();
+})();
+</script>
+</body>
+</html>
