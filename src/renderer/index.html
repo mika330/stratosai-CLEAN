@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'" />
+  <title>Orbit</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-theme="dark">
+  <div id="app">
+    <aside class="sidebar">
+      <div class="logo">🪐 <span>Orbit</span></div>
+      <nav>
+        <button class="nav-btn active" data-view="today">☀️ Today</button>
+        <button class="nav-btn" data-view="history">📈 History</button>
+        <button class="nav-btn" data-view="settings">⚙️ Settings</button>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="add-habit-btn" class="primary">＋ New habit</button>
+      </div>
+    </aside>
+
+    <main id="main">
+      <!-- Today view -->
+      <section id="view-today" class="view active">
+        <header class="view-header">
+          <div>
+            <h1 id="today-title">Today</h1>
+            <p id="today-date" class="muted"></p>
+          </div>
+          <div class="progress-ring-wrap">
+            <svg id="progress-ring" width="72" height="72" viewBox="0 0 72 72">
+              <circle class="ring-bg" cx="36" cy="36" r="30" />
+              <circle class="ring-fg" cx="36" cy="36" r="30" />
+            </svg>
+            <span id="progress-label">0%</span>
+          </div>
+        </header>
+        <div id="habit-list" class="habit-list"></div>
+        <div id="empty-state" class="empty-state hidden">
+          <p>🪐</p>
+          <h2>No habits in orbit yet</h2>
+          <p class="muted">Create your first habit and start building your routine.</p>
+          <button class="primary" id="empty-add-btn">＋ Create a habit</button>
+        </div>
+      </section>
+
+      <!-- History view -->
+      <section id="view-history" class="view">
+        <header class="view-header">
+          <div>
+            <h1>History</h1>
+            <p class="muted">Your consistency over the last 6 months</p>
+          </div>
+          <select id="heatmap-habit"></select>
+        </header>
+        <div class="card">
+          <div id="heatmap" class="heatmap"></div>
+          <div class="heatmap-legend muted">
+            Less
+            <i class="hm hm-0"></i><i class="hm hm-1"></i><i class="hm hm-2"></i><i class="hm hm-3"></i><i class="hm hm-4"></i>
+            More
+          </div>
+        </div>
+        <div id="stat-cards" class="stat-cards"></div>
+      </section>
+
+      <!-- Settings view -->
+      <section id="view-settings" class="view">
+        <header class="view-header"><h1>Settings</h1></header>
+        <div class="card settings-card">
+          <label class="setting-row">
+            <span>Theme</span>
+            <select id="setting-theme">
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+            </select>
+          </label>
+          <label class="setting-row">
+            <span>Start week on</span>
+            <select id="setting-weekstart">
+              <option value="1">Monday</option>
+              <option value="0">Sunday</option>
+            </select>
+          </label>
+          <label class="setting-row">
+            <span>Desktop notifications</span>
+            <input type="checkbox" id="setting-notifications" />
+          </label>
+          <label class="setting-row">
+            <span>Minimize to tray on close</span>
+            <input type="checkbox" id="setting-tray" />
+          </label>
+          <label class="setting-row">
+            <span>Launch at login</span>
+            <input type="checkbox" id="setting-autostart" />
+          </label>
+          <div class="setting-row">
+            <span>Export data</span>
+            <button id="export-btn">Export JSON…</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Habit editor modal -->
+  <div id="modal-backdrop" class="modal-backdrop hidden">
+    <div class="modal">
+      <h2 id="modal-title">New habit</h2>
+      <form id="habit-form">
+        <label>Name
+          <input type="text" id="habit-name" maxlength="60" required placeholder="e.g. Morning run" />
+        </label>
+        <label>Icon</label>
+        <div id="icon-picker" class="icon-picker"></div>
+        <label>Color</label>
+        <div id="color-picker" class="color-picker"></div>
+        <label>Frequency</label>
+        <div class="freq-toggle">
+          <button type="button" id="freq-daily" class="freq-btn active">Every day</button>
+          <button type="button" id="freq-weekly" class="freq-btn">Specific days</button>
+        </div>
+        <div id="day-picker" class="day-picker hidden"></div>
+        <label>Reminder <span class="muted">(optional)</span>
+          <input type="time" id="habit-reminder" />
+        </label>
+        <div class="modal-actions">
+          <button type="button" id="habit-delete" class="danger hidden">Delete</button>
+          <span class="spacer"></span>
+          <button type="button" id="modal-cancel">Cancel</button>
+          <button type="submit" class="primary" id="modal-save">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

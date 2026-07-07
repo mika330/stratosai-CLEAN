@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Orbit — Habit Tracker</title>
+<style>
+/* ============================================================
+   BASELINE STYLES (demo harness — your app has its own)
+   ============================================================ */
+:root {
+  --bg: #f6f5fb; --card: #ffffff; --card-2: #edeaf7;
+  --text: #232333; --muted: #6f6e85; --border: #ddd9ec;
+  --accent: #7c5ce7; --accent-soft: #a29bfe; --gold: #e8a33d;
+  --green: #3dbb6e; --red: #e05252;
+  --hm-0: #e7e4f2; --hm-1: #cdc3ef; --hm-2: #a793e5; --hm-3: #8367da; --hm-4: #5f3fce;
+}
+body.dark {
+  --bg: #12121a; --card: #1a1a26; --card-2: #232333;
+  --text: #ecebf5; --muted: #8b8aa0; --border: #2d2d40;
+  --hm-0: #232333; --hm-1: #3c3163; --hm-2: #55449b; --hm-3: #6e55cf; --hm-4: #a29bfe;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg); color: var(--text); min-height: 100vh; transition: background .3s; }
+.wrap { max-width: 680px; margin: 0 auto; padding: 24px 16px 80px; }
+header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+header h1 { font-size: 1.4rem; margin-right: auto; }
+button { cursor: pointer; font: inherit; }
+.btn { background: var(--card-2); color: var(--text); border: 1px solid var(--border);
+  border-radius: 10px; padding: 8px 14px; font-size: .88rem; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.tabs { display: flex; gap: 6px; margin: 14px 0 18px; }
+.tab { flex: 1; padding: 9px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--card); color: var(--muted); }
+.tab.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+  padding: 16px; margin-bottom: 14px; }
+.muted { color: var(--muted); font-size: .82rem; }
+h2 { font-size: 1.02rem; margin-bottom: 10px; }
+.habit-row { display: flex; align-items: center; gap: 12px; padding: 10px 0;
+  border-bottom: 1px solid var(--border); }
+.habit-row:last-child { border-bottom: none; }
+.h-icon { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center;
+  font-size: 1.15rem; flex-shrink: 0; }
+.h-name { flex: 1; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; }
+.h-streak { font-size: .82rem; color: var(--muted); white-space: nowrap; }
+.h-check { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--border);
+  background: transparent; color: transparent; font-size: 1rem; flex-shrink: 0; transition: all .15s; }
+.h-check:hover { border-color: var(--accent); }
+.h-check.done { background: var(--accent); border-color: var(--accent); color: #fff; }
+.h-del { border: none; background: none; color: var(--muted); font-size: .95rem; padding: 4px; }
+.h-del:hover { color: var(--red); }
+.add-form { display: flex; gap: 8px; flex-wrap: wrap; }
+.add-form input[type=text] { flex: 1; min-width: 160px; padding: 9px 12px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--card-2); color: var(--text); font: inherit; }
+.add-form select, .add-form input[type=color] { border: 1px solid var(--border); border-radius: 10px;
+  background: var(--card-2); color: var(--text); padding: 6px; height: 40px; }
+.week-bar { height: 10px; border-radius: 5px; background: var(--card-2); overflow: hidden; margin-top: 8px; }
+.week-bar i { display: block; height: 100%; background: var(--accent); border-radius: 5px;
+  transition: width .4s; }
+.lb-row { display: flex; align-items: center; gap: 10px; padding: 8px 0;
+  border-bottom: 1px solid var(--border); font-size: .92rem; }
+.lb-row:last-child { border-bottom: none; }
+.lb-rank { width: 26px; text-align: center; font-weight: 700; color: var(--muted); }
+#confetti { position: fixed; inset: 0; pointer-events: none; z-index: 99; }
+.hidden { display: none !important; }
+
+/* ============================================================
+   FEATURE 1 — GAMIFICATION ("Orbit XP")  [copy this block]
+   ============================================================ */
+.xp-widget { display: flex; align-items: center; gap: 10px; background: var(--card);
+  border: 1px solid var(--border); border-radius: 12px; padding: 8px 14px; width: 100%; }
+.xp-level { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-soft)); color: #fff;
+  font-weight: 800; font-size: .95rem; flex-shrink: 0; }
+.xp-meta { flex: 1; min-width: 0; }
+.xp-title { font-size: .82rem; font-weight: 700; }
+.xp-bar { height: 8px; border-radius: 4px; background: var(--card-2); margin-top: 5px; overflow: hidden; }
+.xp-bar i { display: block; height: 100%; border-radius: 4px; width: 0;
+  background: linear-gradient(90deg, var(--accent), var(--accent-soft)); transition: width .5s ease; }
+.xp-nums { font-size: .72rem; color: var(--muted); white-space: nowrap; }
+.badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
+.badge { text-align: center; padding: 12px 6px; border-radius: 12px; border: 1px solid var(--border);
+  background: var(--card-2); }
+.badge .b-icon { font-size: 1.6rem; filter: grayscale(1); opacity: .35; }
+.badge.earned .b-icon { filter: none; opacity: 1; }
+.badge .b-name { font-size: .72rem; font-weight: 700; margin-top: 6px; }
+.badge .b-desc { font-size: .64rem; color: var(--muted); margin-top: 2px; }
+.badge.earned { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
+.xp-toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(80px);
+  background: var(--card); color: var(--text); border: 1px solid var(--gold); border-radius: 14px;
+  padding: 12px 20px; font-size: .9rem; font-weight: 600; box-shadow: 0 8px 30px rgba(0,0,0,.25);
+  opacity: 0; transition: all .35s cubic-bezier(.2,.9,.3,1.2); z-index: 100; }
+.xp-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+/* ============================================================
+   FEATURE 2 — HABIT TEMPLATES LIBRARY  [copy this block]
+   ============================================================ */
+.tpl-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: grid;
+  place-items: center; z-index: 50; }
+.tpl-modal { background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+  padding: 20px; width: min(480px, 92vw); max-height: 84vh; overflow-y: auto; }
+.tpl-modal h2 { margin-bottom: 4px; }
+.tpl-card { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-top: 12px; }
+.tpl-head { display: flex; align-items: center; gap: 8px; }
+.tpl-head .t-name { font-weight: 700; flex: 1; }
+.tpl-habits { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.tpl-chip { font-size: .74rem; background: var(--card-2); border: 1px solid var(--border);
+  border-radius: 999px; padding: 3px 10px; }
+.tpl-import { background: var(--accent); color: #fff; border: none; border-radius: 8px;
+  padding: 6px 12px; font-size: .8rem; font-weight: 600; }
+.tpl-import[disabled] { background: var(--green); cursor: default; }
+.tpl-close { width: 100%; margin-top: 14px; }
+
+/* ============================================================
+   FEATURE 3 — ANALYTICS DASHBOARD  [copy this block]
+   ============================================================ */
+.an-heatmap { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 11px);
+  gap: 3px; overflow-x: auto; padding-bottom: 4px; }
+.an-cell { width: 11px; height: 11px; border-radius: 3px; background: var(--hm-0); }
+.an-l1 { background: var(--hm-1); } .an-l2 { background: var(--hm-2); }
+.an-l3 { background: var(--hm-3); } .an-l4 { background: var(--hm-4); }
+.an-legend { display: flex; align-items: center; gap: 4px; margin-top: 8px; font-size: .72rem;
+  color: var(--muted); }
+.an-legend .an-cell { display: inline-block; }
+.an-weeks { display: flex; gap: 18px; align-items: flex-end; height: 110px; margin-top: 6px; }
+.an-wk { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+.an-wk-bar { width: 100%; max-width: 72px; border-radius: 8px 8px 3px 3px; background: var(--accent-soft);
+  transition: height .4s; min-height: 4px; }
+.an-wk-bar.current { background: var(--accent); }
+.an-wk-label { font-size: .74rem; color: var(--muted); }
+.an-wk-val { font-size: .82rem; font-weight: 700; }
+.an-insight { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0;
+  border-bottom: 1px solid var(--border); font-size: .88rem; }
+.an-insight:last-child { border-bottom: none; }
+.an-insight .i-icon { font-size: 1.05rem; }
+
+/* ============================================================
+   LANDING PAGE — "Good habits have gravity"
+   Committed single-theme space world; the app keeps its toggle.
+   ============================================================ */
+#landing { background: #0b0b14; color: #eceaf8; min-height: 100vh; }
+#landing .ld-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .72rem; letter-spacing: .18em; color: #8f8da6; text-transform: uppercase; }
+.ld-hero { position: relative; min-height: 92vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; padding: 48px 20px 40px;
+  overflow: hidden; }
+#ld-stars { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ld-hero > * { position: relative; }
+.ld-system { width: 300px; height: 300px; position: relative; margin-bottom: 8px; flex-shrink: 0; }
+.ld-planet { position: absolute; left: 50%; top: 50%; width: 110px; height: 110px;
+  margin: -55px 0 0 -55px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #a29bfe, #7c5ce7 45%, #2c2058 85%);
+  box-shadow: 0 0 60px rgba(124, 92, 231, .45); }
+.ld-ringline { position: absolute; left: 50%; top: 50%; width: 190px; height: 64px;
+  margin: -32px 0 0 -95px; border: 2px solid rgba(162, 155, 254, .5); border-radius: 50%;
+  transform: rotate(-18deg); }
+.ld-orbit { position: absolute; inset: 0; animation: ld-spin linear infinite; }
+.ld-orbit span { position: absolute; left: 50%; top: 50%; font-size: 1.35rem;
+  animation: ld-counterspin linear infinite; animation-duration: inherit;
+  text-shadow: 0 0 12px rgba(0,0,0,.8); }
+.ld-orbit.o1 { animation-duration: 14s; } .ld-orbit.o1 span { transform: translate(78px, -12px); }
+.ld-orbit.o2 { animation-duration: 21s; } .ld-orbit.o2 span { transform: translate(-118px, -10px); }
+.ld-orbit.o3 { animation-duration: 29s; } .ld-orbit.o3 span { transform: translate(20px, -142px); }
+@keyframes ld-spin { to { transform: rotate(360deg); } }
+@keyframes ld-counterspin { from { rotate: 0deg; } to { rotate: -360deg; } }
+.ld-h1 { font-size: clamp(2.1rem, 6vw, 3.4rem); font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.06; margin: 14px 0 14px; text-wrap: balance; }
+.ld-h1 em { font-style: normal; color: #a29bfe; }
+.ld-sub { max-width: 34rem; color: #b9b7cd; font-size: 1.02rem; line-height: 1.55;
+  text-wrap: balance; }
+.ld-cta-row { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; justify-content: center; }
+.ld-btn { border-radius: 12px; padding: 13px 22px; font-size: .95rem; font-weight: 700;
+  border: 1px solid rgba(162,155,254,.35); background: transparent; color: #eceaf8; }
+.ld-btn:hover { border-color: #a29bfe; }
+.ld-btn.solid { background: #7c5ce7; border-color: #7c5ce7; color: #fff; }
+.ld-btn.solid:hover { background: #8d70ee; }
+.ld-facts { margin-top: 34px; }
+.ld-wrap { max-width: 640px; margin: 0 auto; padding: 56px 20px; }
+.ld-wrap h2 { font-size: 1.55rem; font-weight: 800; letter-spacing: -0.02em; margin: 10px 0 26px;
+  text-wrap: balance; }
+.ld-step { display: flex; gap: 16px; padding: 18px 0; border-top: 1px solid #232336;
+  align-items: flex-start; }
+.ld-step:last-of-type { border-bottom: 1px solid #232336; }
+.ld-step-n { font-family: ui-monospace, Menlo, Consolas, monospace; color: #7c5ce7;
+  font-weight: 700; font-size: .85rem; padding-top: 3px; }
+.ld-step b { display: block; margin-bottom: 4px; font-size: 1.02rem; }
+.ld-step p { color: #b9b7cd; font-size: .92rem; line-height: 1.5; }
+.ld-quiz-card { background: #12121e; border: 1px solid #232336; border-radius: 16px;
+  padding: 22px; min-height: 240px; }
+.ld-q { font-size: 1.15rem; font-weight: 700; margin: 6px 0 18px; text-wrap: balance; }
+.ld-answers { display: flex; flex-direction: column; gap: 9px; }
+.ld-answer { text-align: left; padding: 13px 16px; border-radius: 12px; font-size: .95rem;
+  border: 1px solid #2b2b42; background: #171726; color: #eceaf8; transition: all .15s; }
+.ld-answer:hover { border-color: #7c5ce7; transform: translateX(3px); }
+.ld-progress { display: flex; gap: 6px; margin-bottom: 4px; }
+.ld-progress i { height: 4px; flex: 1; border-radius: 2px; background: #232336; }
+.ld-progress i.on { background: #7c5ce7; }
+.ld-plan-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0; }
+.ld-plan-chips span { font-size: .78rem; background: #171726; border: 1px solid #2b2b42;
+  border-radius: 999px; padding: 4px 12px; }
+.ld-plan-msg { color: #b9b7cd; font-size: .92rem; line-height: 1.55; border-left: 3px solid #e8a33d;
+  padding-left: 12px; margin: 16px 0 20px; }
+.ld-sub-row { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+.ld-sub-row input { flex: 1; min-width: 200px; padding: 12px 14px; border-radius: 12px;
+  border: 1px solid #2b2b42; background: #171726; color: #eceaf8; font: inherit; }
+.ld-sub-row input:focus { outline: 2px solid #7c5ce7; outline-offset: 1px; }
+.ld-note { color: #8f8da6; font-size: .78rem; margin-top: 10px; }
+.ld-footer { text-align: center; padding: 30px 20px 48px; }
+#app-logo { cursor: pointer; }
+.ld-legal-links { margin-top: 18px; }
+.ld-legal-links a, .app-foot a { color: inherit; text-decoration: underline; cursor: pointer; }
+.app-foot { text-align: center; margin-top: 26px; }
+
+/* ---- pricing ---- */
+.ld-pricing { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.ld-price-card { background: #12121e; border: 1px solid #232336; border-radius: 16px;
+  padding: 22px; display: flex; flex-direction: column; }
+.ld-price-card.pro { border-color: #7c5ce7; box-shadow: 0 0 44px rgba(124, 92, 231, .16); }
+.ld-price-name { font-weight: 800; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; }
+.ld-pill { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .62rem;
+  letter-spacing: .12em; text-transform: uppercase; border-radius: 999px; padding: 3px 10px;
+  border: 1px solid #e8a33d; color: #e8a33d; }
+.ld-price-num { font-size: 2rem; font-weight: 800; margin: 10px 0 2px;
+  font-variant-numeric: tabular-nums; }
+.ld-price-num small { font-size: .85rem; font-weight: 500; color: #8f8da6; }
+.ld-price-sub { color: #8f8da6; font-size: .78rem; }
+.ld-price-list { list-style: none; margin: 16px 0 20px; display: flex; flex-direction: column;
+  gap: 9px; font-size: .88rem; color: #b9b7cd; }
+.ld-price-list li { display: flex; gap: 9px; align-items: flex-start; }
+.ld-price-list .tick { color: #7c5ce7; font-weight: 800; }
+.ld-price-card .ld-btn { margin-top: auto; width: 100%; }
+
+/* ---- Orbit Coach (in-app, uses app theme tokens) ---- */
+.coach-q { font-size: 1.05rem; font-weight: 700; margin: 10px 0 14px; text-wrap: balance; }
+.coach-answers { display: flex; flex-direction: column; gap: 8px; }
+.coach-answer { text-align: left; padding: 12px 14px; border-radius: 12px; font-size: .92rem;
+  border: 1px solid var(--border); background: var(--card-2); color: var(--text); transition: all .15s; }
+.coach-answer:hover { border-color: var(--accent); transform: translateX(3px); }
+.coach-disclaimer { font-size: .74rem; color: var(--muted); border-left: 3px solid var(--gold);
+  padding-left: 10px; margin: 14px 0; line-height: 1.5; }
+.coach-pro-pill { font-size: .64rem; letter-spacing: .1em; text-transform: uppercase;
+  border: 1px solid var(--gold); color: var(--gold); border-radius: 999px; padding: 3px 10px;
+  font-family: ui-monospace, Menlo, Consolas, monospace; }
+
+/* ---- legal modal body ---- */
+.legal-body { font-size: .86rem; line-height: 1.55; color: var(--text); }
+.legal-body h3 { font-size: .92rem; margin: 16px 0 6px; }
+.legal-body p, .legal-body li { color: var(--muted); margin-bottom: 6px; }
+.legal-body ul { padding-left: 18px; }
+.legal-updated { font-size: .72rem; color: var(--muted); margin-top: 4px; }
+@media (prefers-reduced-motion: reduce) {
+  .ld-orbit { animation: none; } .ld-orbit span { animation: none; }
+}
+</style>
+</head>
+<body>
+<section id="landing" class="hidden">
+  <div class="ld-hero">
+    <canvas id="ld-stars"></canvas>
+    <div class="ld-system" aria-hidden="true">
+      <div class="ld-ringline"></div>
+      <div class="ld-planet"></div>
+      <div class="ld-orbit o1"><span>🏃</span></div>
+      <div class="ld-orbit o2"><span>📚</span></div>
+      <div class="ld-orbit o3"><span>🧘</span></div>
+    </div>
+    <p class="ld-mono">Orbit · a habit tracker with gravity</p>
+    <h1 class="ld-h1">Good habits<br />have <em>gravity</em>.</h1>
+    <p class="ld-sub">Most habit apps count your days. Orbit pulls you back for the next one —
+      streaks you can see, XP you can feel, and insights that know your weak spots
+      before you do.</p>
+    <div class="ld-cta-row">
+      <button class="ld-btn solid" id="ld-quiz-cta">Find my orbit ↓</button>
+      <button class="ld-btn" id="ld-skip">Skip the tour →</button>
+    </div>
+    <p class="ld-mono ld-facts">local-first · no account · free</p>
+  </div>
+
+  <div class="ld-wrap">
+    <p class="ld-mono">How it works</p>
+    <h2>Three moves. Every day the pull gets stronger.</h2>
+    <div class="ld-step">
+      <span class="ld-step-n">01</span>
+      <div><b>Check in with one tap</b>
+        <p>Your day on one page. Tap the ring, watch the progress fill, get confetti
+           when you clear the board.</p></div>
+    </div>
+    <div class="ld-step">
+      <span class="ld-step-n">02</span>
+      <div><b>Streaks make missing expensive</b>
+        <p>A 🔥 12-day streak is worth protecting. The 6-month heatmap turns your
+           consistency into something you can actually see.</p></div>
+    </div>
+    <div class="ld-step">
+      <span class="ld-step-n">03</span>
+      <div><b>Level up your orbit</b>
+        <p>Every check-in earns XP. Perfect days earn more. Badges drop at 7 and 30-day
+           streaks — and the insights engine tells you exactly which weekday is
+           sabotaging you.</p></div>
+    </div>
+  </div>
+
+  <div class="ld-wrap" id="ld-quiz">
+    <p class="ld-mono">Find your orbit · 30 seconds</p>
+    <h2>Three questions before launch.</h2>
+    <div class="ld-quiz-card" id="ld-quiz-card"></div>
+  </div>
+
+  <div class="ld-wrap" id="ld-pricing">
+    <p class="ld-mono">Pricing</p>
+    <h2>Free forever. Pro when you're ready to go further.</h2>
+    <div class="ld-pricing">
+      <div class="ld-price-card">
+        <div class="ld-price-name">🛰️ Free</div>
+        <div class="ld-price-num">$0 <small>forever</small></div>
+        <p class="ld-price-sub">Everything you need to build the habit of habits.</p>
+        <ul class="ld-price-list">
+          <li><span class="tick">✓</span> Up to 5 habits with streaks &amp; heatmap</li>
+          <li><span class="tick">✓</span> XP, levels &amp; core badges</li>
+          <li><span class="tick">✓</span> Routine templates</li>
+          <li><span class="tick">✓</span> Weekly insights</li>
+          <li><span class="tick">✓</span> Local-first — data stays on your device</li>
+        </ul>
+        <button class="ld-btn" id="ld-free-cta">Start free →</button>
+      </div>
+      <div class="ld-price-card pro">
+        <div class="ld-price-name">🚀 Orbit Pro <span class="ld-pill">Coming soon</span></div>
+        <div class="ld-price-num">$4.99 <small>/mo · or $39/yr</small></div>
+        <p class="ld-price-sub">Founding members lock in $2.99/mo — forever.</p>
+        <ul class="ld-price-list">
+          <li><span class="tick">✓</span> <b>Orbit Coach</b> — personalized gym &amp; exercise plans built around your goal</li>
+          <li><span class="tick">✓</span> Unlimited habits &amp; full history</li>
+          <li><span class="tick">✓</span> Deep insights: failure patterns, best-time analysis</li>
+          <li><span class="tick">✓</span> Premium habit packs &amp; 30-day challenges</li>
+          <li><span class="tick">✓</span> Cloud sync across devices</li>
+          <li><span class="tick">✓</span> Exclusive badge sets</li>
+        </ul>
+        <button class="ld-btn solid" id="ld-pro-cta">Join the founding waitlist</button>
+      </div>
+    </div>
+    <p class="ld-note">Orbit is in beta — everything is free and unlimited right now.
+       Pro pricing kicks in only when Pro ships, and beta users keep a founding discount.</p>
+  </div>
+
+  <div class="ld-wrap">
+    <p class="ld-mono">Stay in the loop</p>
+    <h2>Get the weekly orbit report.</h2>
+    <p class="ld-sub">One email a week: your streaks, your XP, and one habit-science
+       idea worth trying. No spam — you're the whole point.</p>
+    <div class="ld-sub-row">
+      <input type="email" id="ld-email" placeholder="you@earth.com" autocomplete="email" />
+      <button class="ld-btn solid" id="ld-subscribe">Count me in</button>
+    </div>
+    <p class="ld-note" id="ld-sub-note">Saved on this device — Orbit is local-first and your
+       data never leaves it.</p>
+  </div>
+
+  <div class="ld-footer">
+    <button class="ld-btn solid" id="ld-launch">🚀 Launch Orbit</button>
+    <p class="ld-mono ld-facts">your data stays on this device</p>
+    <p class="ld-mono ld-legal-links"><a data-legal="terms">Terms</a> · <a data-legal="privacy">Privacy</a></p>
+  </div>
+</section>
+
+<div class="wrap hidden" id="app-root">
+  <header>
+    <h1 id="app-logo" title="About Orbit">🪐 Orbit</h1>
+    <button class="btn" id="dark-toggle" title="Toggle dark mode">🌙</button>
+    <button class="btn" id="demo-btn" title="Load 5 weeks of sample data">🎲 Demo</button>
+    <button class="btn" id="export-btn">Export</button>
+    <!-- FEATURE 2 anchor -->
+    <button class="btn" id="tpl-open">📦 Templates</button>
+    <button class="btn" id="coach-open">💪 Coach</button>
+  </header>
+
+  <!-- FEATURE 1 anchor: XP widget mounts here -->
+  <div id="xp-anchor"></div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="today">Today</button>
+    <button class="tab" data-tab="stats">Stats</button>
+  </div>
+
+  <section id="tab-today">
+    <div class="card">
+      <h2>Add a habit</h2>
+      <form class="add-form" id="add-form">
+        <input type="text" id="add-name" placeholder="e.g. Morning run" maxlength="50" required />
+        <select id="add-icon"></select>
+        <input type="color" id="add-color" value="#7c5ce7" title="Habit color" />
+        <button class="btn primary" type="submit">Add</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2 id="today-head">Today</h2>
+      <div id="habit-list"></div>
+      <p class="muted" id="empty-msg">No habits yet — add one above or import a template 📦</p>
+      <div class="week-bar" title="This week's completion"><i id="week-fill"></i></div>
+      <p class="muted" id="week-label" style="margin-top:6px"></p>
+    </div>
+  </section>
+
+  <section id="tab-stats" class="hidden">
+    <div class="card">
+      <h2>🏆 Leaderboard</h2>
+      <div id="leaderboard"></div>
+    </div>
+
+    <!-- FEATURE 3 anchors -->
+    <div class="card">
+      <h2>📅 Last 6 months</h2>
+      <div id="an-heatmap"></div>
+    </div>
+    <div class="card">
+      <h2>📊 Week over week</h2>
+      <div id="an-weeks"></div>
+    </div>
+    <div class="card">
+      <h2>🔮 Habit insights</h2>
+      <div id="an-insights"></div>
+    </div>
+
+    <!-- FEATURE 1 anchor: badge case -->
+    <div class="card">
+      <h2>🎖️ Achievements</h2>
+      <div id="badge-anchor"></div>
+    </div>
+  </section>
+
+  <p class="muted app-foot">Orbit beta ·
+    <a data-legal="terms">Terms</a> · <a data-legal="privacy">Privacy</a></p>
+</div>
+<canvas id="confetti"></canvas>
+
+<script>
+/* ============================================================
+   BASELINE APP (demo harness standing in for your index.html)
+   + OrbitBridge: the tiny adapter the 3 feature modules use.
+   In YOUR app: implement OrbitBridge against your own state.
+   ============================================================ */
+(() => {
+  'use strict';
+  const LS = { habits: 'orbit.habits', checkins: 'orbit.checkins', settings: 'orbit.settings' };
+  const load = (k, f) => { try { return JSON.parse(localStorage.getItem(k)) ?? f; } catch { return f; } };
+  const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* sandboxed */ } };
+
+  let habits = load(LS.habits, []);          // [{id, name, icon, color, createdAt}]
+  let checkins = load(LS.checkins, {});      // { habitId: ['YYYY-MM-DD', ...] }
+  let settings = load(LS.settings, {});
+  if (typeof settings.dark !== 'boolean') {
+    // first run: follow the host/OS theme (artifact viewer stamps data-theme on <html>)
+    const rootTheme = document.documentElement.dataset.theme;
+    settings.dark = rootTheme ? rootTheme === 'dark'
+      : matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+
+  const dateKey = (d = new Date()) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const addDays = (key, n) => { const [y, m, d] = key.split('-').map(Number);
+    const dt = new Date(y, m - 1, d + n); return dateKey(dt); };
+
+  // --- OrbitBridge: THE adapter. Feature modules only ever talk to this. ---
+  const listeners = {};
+  window.OrbitBridge = {
+    getHabits: () => habits.map(h => ({ ...h })),
+    getCheckins: (id) => (checkins[id] || []).slice(),
+    addHabit: ({ name, icon, color }) => {
+      const h = { id: crypto.randomUUID(), name, icon, color, createdAt: dateKey() };
+      habits.push(h); checkins[h.id] = []; persist(); render();
+      window.OrbitBridge.emit('habits-changed', {});
+      return h.id;
+    },
+    todayKey: () => dateKey(),
+    addDaysKey: addDays,
+    on: (ev, fn) => { (listeners[ev] ??= []).push(fn); },
+    emit: (ev, data) => { (listeners[ev] || []).forEach(fn => fn(data)); },
+  };
+
+  function persist() { save(LS.habits, habits); save(LS.checkins, checkins); save(LS.settings, settings); }
+
+  function currentStreak(dates, today = dateKey()) {
+    const set = new Set(dates);
+    let k = set.has(today) ? today : addDays(today, -1);
+    let n = 0;
+    while (set.has(k)) { n++; k = addDays(k, -1); }
+    return n;
+  }
+  function longestStreak(dates) {
+    const sorted = [...dates].sort();
+    let best = 0, run = 0, prev = null;
+    for (const d of sorted) {
+      run = (prev && addDays(prev, 1) === d) ? run + 1 : 1;
+      if (run > best) best = run;
+      prev = d;
+    }
+    return best;
+  }
+
+  // --- confetti (lite) ---
+  const canvas = document.getElementById('confetti');
+  const ctx = canvas.getContext('2d');
+  function confetti() {
+    canvas.width = innerWidth; canvas.height = innerHeight;
+    const parts = Array.from({ length: 120 }, () => ({
+      x: Math.random() * canvas.width, y: -20 - Math.random() * 200,
+      vy: 2 + Math.random() * 3, vx: -1.5 + Math.random() * 3,
+      s: 5 + Math.random() * 6, r: Math.random() * Math.PI,
+      c: ['#7c5ce7', '#a29bfe', '#e8a33d', '#3dbb6e', '#e05252'][Math.floor(Math.random() * 5)],
+    }));
+    let t = 0;
+    (function tick() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const p of parts) {
+        p.x += p.vx; p.y += p.vy; p.r += 0.08;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
+        ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s); ctx.restore();
+      }
+      if (++t < 140) requestAnimationFrame(tick);
+      else ctx.clearRect(0, 0, canvas.width, canvas.height);
+    })();
+  }
+
+  // --- rendering ---
+  const $ = s => document.querySelector(s);
+  const ICONS = ['⭐', '🏃', '📚', '💧', '🧘', '💪', '🛏️', '🥗', '✍️', '🌅', '💊', '🎯'];
+  $('#add-icon').innerHTML = ICONS.map(i => `<option>${i}</option>`).join('');
+
+  function render() {
+    const today = dateKey();
+    document.body.classList.toggle('dark', settings.dark);
+    $('#today-head').textContent = new Date().toLocaleDateString(undefined,
+      { weekday: 'long', month: 'long', day: 'numeric' });
+
+    const list = $('#habit-list');
+    list.innerHTML = '';
+    $('#empty-msg').classList.toggle('hidden', habits.length > 0);
+    for (const h of habits) {
+      const dates = checkins[h.id] || [];
+      const done = dates.includes(today);
+      const row = document.createElement('div');
+      row.className = 'habit-row';
+      const streak = currentStreak(dates);
+      row.innerHTML =
+        `<div class="h-icon" style="background:${h.color}33">${h.icon}</div>` +
+        `<div class="h-name">${h.name.replace(/</g, '&lt;')}</div>` +
+        `<span class="h-streak">${streak ? '🔥 ' + streak : ''}</span>` +
+        `<button class="h-del" title="Delete">✕</button>` +
+        `<button class="h-check ${done ? 'done' : ''}">✓</button>`;
+      row.querySelector('.h-check').onclick = () => toggle(h.id);
+      // two-click delete confirm (native confirm() is blocked in sandboxed embeds)
+      row.querySelector('.h-del').onclick = (e) => {
+        const btn = e.currentTarget;
+        if (btn.dataset.arm) {
+          habits = habits.filter(x => x.id !== h.id); delete checkins[h.id];
+          persist(); render(); window.OrbitBridge.emit('habits-changed', {});
+          return;
+        }
+        btn.dataset.arm = '1'; btn.textContent = 'Sure?'; btn.style.color = 'var(--red)';
+        setTimeout(() => {
+          if (btn.isConnected) { delete btn.dataset.arm; btn.textContent = '✕'; btn.style.color = ''; }
+        }, 2500);
+      };
+      list.appendChild(row);
+    }
+
+    // weekly %
+    let due = 0, done = 0;
+    for (let i = 0; i < 7; i++) {
+      const k = addDays(today, -i);
+      for (const h of habits) {
+        if (k < h.createdAt) continue;
+        due++;
+        if ((checkins[h.id] || []).includes(k)) done++;
+      }
+    }
+    const pct = due ? Math.round(done / due * 100) : 0;
+    $('#week-fill').style.width = pct + '%';
+    $('#week-label').textContent = `This week: ${done}/${due} check-ins (${pct}%)`;
+
+    // leaderboard
+    const lb = $('#leaderboard');
+    const ranked = habits
+      .map(h => ({ h, cur: currentStreak(checkins[h.id] || []), best: longestStreak(checkins[h.id] || []),
+                   total: (checkins[h.id] || []).length }))
+      .sort((a, b) => b.cur - a.cur || b.total - a.total);
+    lb.innerHTML = ranked.length ? '' : '<p class="muted">Check some habits off to enter the race 🏁</p>';
+    ranked.forEach((r, i) => {
+      const row = document.createElement('div');
+      row.className = 'lb-row';
+      row.innerHTML = `<span class="lb-rank">${['🥇', '🥈', '🥉'][i] || i + 1}</span>` +
+        `<span>${r.h.icon}</span><span class="h-name">${r.h.name.replace(/</g, '&lt;')}</span>` +
+        `<span class="muted">best ${r.best}</span><b>🔥 ${r.cur}</b>`;
+      lb.appendChild(row);
+    });
+
+    window.OrbitBridge.emit('render', {});
+  }
+
+  function toggle(id) {
+    const today = dateKey();
+    const arr = checkins[id] ||= [];
+    const i = arr.indexOf(today);
+    const completed = i < 0;
+    if (completed) arr.push(today); else arr.splice(i, 1);
+    persist();
+    if (completed && habits.length &&
+        habits.every(h => (checkins[h.id] || []).includes(today))) confetti();
+    render();
+    window.OrbitBridge.emit('checkin', { habitId: id, date: today, completed });
+  }
+
+  $('#add-form').onsubmit = (e) => {
+    e.preventDefault();
+    const name = $('#add-name').value.trim();
+    if (!name) return;
+    window.OrbitBridge.addHabit({ name, icon: $('#add-icon').value, color: $('#add-color').value });
+    $('#add-name').value = '';
+  };
+  $('#dark-toggle').onclick = () => { settings.dark = !settings.dark; persist(); render(); };
+
+  // Demo seeder: 5 weeks of realistic history so streaks, badges, heatmap
+  // and every insight rule have data to show. Two-click confirm if data exists.
+  function seedDemo() {
+    const today = dateKey();
+    const created = addDays(today, -35);
+    const mk = (name, icon, color) => ({ id: crypto.randomUUID(), name, icon, color, createdAt: created });
+    const med = mk('Meditate 10 min', '🧘', '#7c5ce7');
+    const read = mk('Read 20 pages', '📚', '#3d9fe8');
+    const run = mk('Morning run', '🏃', '#e05252');
+    const water = mk('Drink 2L water', '💧', '#3dbb6e');
+    habits = [med, read, run, water];
+    checkins = { [med.id]: [], [read.id]: [], [run.id]: [], [water.id]: [] };
+    for (let i = 1; i <= 34; i++) {
+      const k = addDays(today, -i);
+      const dow = new Date(k + 'T00:00').getDay();
+      checkins[med.id].push(k);                                        // 34-day streak → Full Orbit badge
+      if ((i >= 1 && i <= 3) || (i >= 6 && i <= 15)) checkins[read.id].push(k); // best 10 vs current 3 → "beat it"
+      if (i >= 5 && i <= 24 && dow !== 5) checkins[run.id].push(k);    // quiet 4 days → "slipped" insight
+      if (dow !== 5 && (i * 7) % 10 < 6) checkins[water.id].push(k);   // Fridays weak → weekday insight
+    }
+    try { localStorage.removeItem('orbit.xp.seen'); } catch { /* sandboxed */ }
+    persist(); render();
+    window.OrbitBridge.emit('habits-changed', {});
+  }
+  $('#demo-btn').onclick = (e) => {
+    const btn = e.currentTarget;
+    if (habits.length && !btn.dataset.arm) {
+      btn.dataset.arm = '1'; btn.textContent = 'Replace data?';
+      setTimeout(() => {
+        if (btn.isConnected) { delete btn.dataset.arm; btn.textContent = '🎲 Demo'; }
+      }, 3000);
+      return;
+    }
+    delete btn.dataset.arm; btn.textContent = '🎲 Demo';
+    seedDemo();
+  };
+  $('#export-btn').onclick = () => {
+    const blob = new Blob([JSON.stringify({ habits, checkins, exportedAt: new Date().toISOString() }, null, 2)],
+      { type: 'application/json' });
+    const a = Object.assign(document.createElement('a'),
+      { href: URL.createObjectURL(blob), download: `orbit-export-${dateKey()}.json` });
+    a.click(); URL.revokeObjectURL(a.href);
+  };
+  document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === t));
+    $('#tab-today').classList.toggle('hidden', t.dataset.tab !== 'today');
+    $('#tab-stats').classList.toggle('hidden', t.dataset.tab !== 'stats');
+    window.OrbitBridge.emit('render', {});
+  });
+
+  render();
+})();
+</script>
+
+<script>
+/* ============================================================
+   FEATURE 1 — GAMIFICATION: "Orbit XP"  [copy this block]
+   XP, levels, and achievement badges. Everything is RECOMPUTED
+   deterministically from habits + check-ins, so undo/delete can
+   never corrupt totals — only newly-earned badges are stored to
+   know when to toast.
+   Requires: OrbitBridge (getHabits, getCheckins, todayKey,
+   addDaysKey, on) and anchors #xp-anchor + #badge-anchor.
+   ============================================================ */
+(() => {
+  'use strict';
+  const B = window.OrbitBridge;
+  const LS_SEEN = 'orbit.xp.seen'; // badge ids already celebrated
+
+  // --- XP rules -------------------------------------------------
+  const XP_PER_CHECKIN = 10;
+  const XP_PERFECT_DAY = 25;   // every habit done on one day (2+ habits)
+  const XP_PER_BADGE = 50;
+
+  const longestStreak = (dates) => {
+    const sorted = [...dates].sort();
+    let best = 0, run = 0, prev = null;
+    for (const d of sorted) {
+      run = (prev && B.addDaysKey(prev, 1) === d) ? run + 1 : 1;
+      if (run > best) best = run;
+      prev = d;
+    }
+    return best;
+  };
+
+  function computeState() {
+    const habits = B.getHabits();
+    const byHabit = habits.map(h => ({ h, dates: B.getCheckins(h.id) }));
+    const totalCheckins = byHabit.reduce((n, x) => n + x.dates.length, 0);
+    const bestStreak = Math.max(0, ...byHabit.map(x => longestStreak(x.dates)));
+
+    // perfect days: dates where every habit that existed was completed
+    const byDate = new Map();
+    for (const { dates } of byHabit)
+      for (const d of dates) byDate.set(d, (byDate.get(d) || 0) + 1);
+    let perfectDays = 0, perfectRun = 0, bestPerfectRun = 0, prevPerfect = null;
+    for (const d of [...byDate.keys()].sort()) {
+      const existing = habits.filter(h => h.createdAt <= d).length;
+      if (existing >= 2 && byDate.get(d) === existing) {
+        perfectDays++;
+        perfectRun = (prevPerfect && B.addDaysKey(prevPerfect, 1) === d) ? perfectRun + 1 : 1;
+        bestPerfectRun = Math.max(bestPerfectRun, perfectRun);
+        prevPerfect = d;
+      }
+    }
+
+    const facts = { totalCheckins, bestStreak, perfectDays, bestPerfectRun, habitCount: habits.length };
+    const earned = BADGES.filter(b => b.test(facts));
+    const xp = totalCheckins * XP_PER_CHECKIN + perfectDays * XP_PERFECT_DAY + earned.length * XP_PER_BADGE;
+
+    // level: advancing from level L needs 100*L XP → cumulative 50*L*(L-1)
+    let level = 1;
+    while (50 * (level + 1) * level <= xp) level++;
+    const floor = 50 * level * (level - 1);
+    const ceil = 50 * (level + 1) * level;
+    return { xp, level, into: xp - floor, span: ceil - floor, earned, facts };
+  }
+
+  const BADGES = [
+    { id: 'first',    icon: '🌱', name: 'First Orbit',    desc: 'Complete your first check-in',
+      test: f => f.totalCheckins >= 1 },
+    { id: 'week',     icon: '🔥', name: 'One Week Strong', desc: 'Reach a 7-day streak',
+      test: f => f.bestStreak >= 7 },
+    { id: 'month',    icon: '🌕', name: 'Full Orbit',      desc: 'Reach a 30-day streak',
+      test: f => f.bestStreak >= 30 },
+    { id: 'century',  icon: '💯', name: 'Centurion',       desc: '100 total check-ins',
+      test: f => f.totalCheckins >= 100 },
+    { id: 'perfect7', icon: '✨', name: 'Perfect Week',    desc: '7 perfect days in a row',
+      test: f => f.bestPerfectRun >= 7 },
+    { id: 'collector',icon: '🧺', name: 'Collector',       desc: 'Track 5 habits at once',
+      test: f => f.habitCount >= 5 },
+  ];
+
+  // --- UI -------------------------------------------------------
+  const anchor = document.getElementById('xp-anchor');
+  anchor.innerHTML =
+    `<div class="xp-widget">
+       <div class="xp-level" id="xp-level">1</div>
+       <div class="xp-meta">
+         <div class="xp-title" id="xp-title">Level 1</div>
+         <div class="xp-bar"><i id="xp-fill"></i></div>
+       </div>
+       <div class="xp-nums" id="xp-nums"></div>
+     </div>`;
+
+  const badgeAnchor = document.getElementById('badge-anchor');
+
+  let toastTimer = null;
+  function toast(msg) {
+    let el = document.querySelector('.xp-toast');
+    if (!el) { el = document.createElement('div'); el.className = 'xp-toast'; document.body.appendChild(el); }
+    el.textContent = msg;
+    requestAnimationFrame(() => el.classList.add('show'));
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+  }
+
+  let lastLevel = null;
+  function refresh() {
+    const s = computeState();
+    document.getElementById('xp-level').textContent = s.level;
+    document.getElementById('xp-title').textContent =
+      `Level ${s.level} · ${['Stardust','Satellite','Moonwalker','Astronaut','Comet','Supernova'][Math.min(s.level - 1, 5)]}`;
+    document.getElementById('xp-fill').style.width = Math.round(s.into / s.span * 100) + '%';
+    document.getElementById('xp-nums').textContent = `${s.xp} XP · ${s.span - s.into} to next`;
+
+    badgeAnchor.innerHTML = '';
+    const earnedIds = new Set(s.earned.map(b => b.id));
+    const grid = document.createElement('div');
+    grid.className = 'badge-grid';
+    for (const b of BADGES) {
+      const el = document.createElement('div');
+      el.className = 'badge' + (earnedIds.has(b.id) ? ' earned' : '');
+      el.innerHTML = `<div class="b-icon">${b.icon}</div><div class="b-name">${b.name}</div>` +
+                     `<div class="b-desc">${b.desc}</div>`;
+      grid.appendChild(el);
+    }
+    badgeAnchor.appendChild(grid);
+
+    // celebrate newly earned badges & level-ups
+    let seen;
+    try { seen = new Set(JSON.parse(localStorage.getItem(LS_SEEN)) || []); } catch { seen = new Set(); }
+    for (const b of s.earned) {
+      if (!seen.has(b.id)) { toast(`${b.icon} Badge unlocked: ${b.name}! +${XP_PER_BADGE} XP`); seen.add(b.id); }
+    }
+    try { localStorage.setItem(LS_SEEN, JSON.stringify([...seen])); } catch { /* sandboxed */ }
+    if (lastLevel !== null && s.level > lastLevel) toast(`🚀 Level up! You reached level ${s.level}`);
+    lastLevel = s.level;
+  }
+
+  B.on('render', refresh);
+  B.on('checkin', refresh);
+  B.on('habits-changed', refresh);
+  refresh();
+})();
+</script>
+
+<script>
+/* ============================================================
+   FEATURE 2 — HABIT TEMPLATES LIBRARY  [copy this block]
+   Pre-built routines imported in one click. Duplicate names
+   (case-insensitive) are skipped so re-importing is safe.
+   Requires: OrbitBridge (getHabits, addHabit) and a trigger
+   button with id="tpl-open".
+   ============================================================ */
+(() => {
+  'use strict';
+  const B = window.OrbitBridge;
+
+  const TEMPLATES = [
+    { id: 'morning', icon: '🌅', name: 'Morning Routine',
+      desc: 'Start every day with intention',
+      habits: [
+        { name: 'Wake up before 7am', icon: '⏰', color: '#e8a33d' },
+        { name: 'Stretch 5 minutes',  icon: '🤸', color: '#3dbb6e' },
+        { name: 'Meditate 10 min',    icon: '🧘', color: '#7c5ce7' },
+        { name: 'Healthy breakfast',  icon: '🥣', color: '#e05252' },
+      ] },
+    { id: 'fitness', icon: '💪', name: 'Fitness Routine',
+      desc: 'Build strength and energy',
+      habits: [
+        { name: 'Workout 30 min',     icon: '🏋️', color: '#e05252' },
+        { name: 'Drink 8 glasses of water', icon: '💧', color: '#3d9fe8' },
+        { name: '10k steps',          icon: '🚶', color: '#3dbb6e' },
+        { name: 'Sleep before 11pm',  icon: '🛏️', color: '#7c5ce7' },
+      ] },
+    { id: 'productivity', icon: '🎯', name: 'Productivity Routine',
+      desc: 'Deep focus, every day',
+      habits: [
+        { name: 'Plan the day',       icon: '📝', color: '#e8a33d' },
+        { name: '2h deep work',       icon: '🧠', color: '#7c5ce7' },
+        { name: 'Inbox zero',         icon: '📬', color: '#3d9fe8' },
+        { name: 'Evening review',     icon: '🌙', color: '#55449b' },
+      ] },
+    { id: 'health', icon: '🍎', name: 'Health Routine',
+      desc: 'Small habits, big health wins',
+      habits: [
+        { name: 'Take vitamins',      icon: '💊', color: '#e8a33d' },
+        { name: 'Sleep 8 hours',      icon: '😴', color: '#7c5ce7' },
+        { name: 'No junk food',       icon: '🥗', color: '#3dbb6e' },
+        { name: 'Walk outside',       icon: '🌳', color: '#3d9fe8' },
+      ] },
+  ];
+
+  let backdrop = null;
+
+  function importTemplate(tpl, btn) {
+    const existing = new Set(B.getHabits().map(h => h.name.trim().toLowerCase()));
+    let added = 0;
+    for (const h of tpl.habits) {
+      if (existing.has(h.name.trim().toLowerCase())) continue;
+      B.addHabit(h);
+      added++;
+    }
+    btn.disabled = true;
+    btn.textContent = added ? `✓ Added ${added}` : '✓ Already added';
+  }
+
+  function open() {
+    backdrop = document.createElement('div');
+    backdrop.className = 'tpl-backdrop';
+    const modal = document.createElement('div');
+    modal.className = 'tpl-modal';
+    modal.innerHTML = `<h2>📦 Habit templates</h2>
+      <p class="muted">Import a full routine with one click — duplicates are skipped.</p>`;
+
+    const existing = new Set(B.getHabits().map(h => h.name.trim().toLowerCase()));
+    for (const tpl of TEMPLATES) {
+      const card = document.createElement('div');
+      card.className = 'tpl-card';
+      const allIn = tpl.habits.every(h => existing.has(h.name.trim().toLowerCase()));
+      card.innerHTML =
+        `<div class="tpl-head"><span>${tpl.icon}</span><span class="t-name">${tpl.name}</span>
+           <button class="tpl-import" ${allIn ? 'disabled' : ''}>${allIn ? '✓ Imported' : 'Import'}</button>
+         </div>
+         <div class="muted">${tpl.desc}</div>
+         <div class="tpl-habits">${tpl.habits.map(h => `<span class="tpl-chip">${h.icon} ${h.name}</span>`).join('')}</div>`;
+      card.querySelector('.tpl-import').onclick = (e) => importTemplate(tpl, e.target);
+      modal.appendChild(card);
+    }
+
+    const close = document.createElement('button');
+    close.className = 'btn tpl-close';
+    close.textContent = 'Done';
+    close.onclick = closeModal;
+    modal.appendChild(close);
+
+    backdrop.appendChild(modal);
+    backdrop.onclick = (e) => { if (e.target === backdrop) closeModal(); };
+    document.body.appendChild(backdrop);
+  }
+  function closeModal() { backdrop?.remove(); backdrop = null; }
+
+  document.getElementById('tpl-open').onclick = open;
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+  // programmatic import (used by the landing quiz's "launch with routine")
+  window.OrbitTemplates = {
+    importById: (id) => {
+      const tpl = TEMPLATES.find(t => t.id === id);
+      if (tpl) importTemplate(tpl, document.createElement('button'));
+      return Boolean(tpl);
+    },
+    list: () => TEMPLATES.map(t => ({ id: t.id, icon: t.icon, name: t.name, habits: t.habits })),
+  };
+})();
+</script>
+
+<script>
+/* ============================================================
+   FEATURE 3 — ADVANCED ANALYTICS DASHBOARD  [copy this block]
+   GitHub-style heatmap, week-over-week bars, and rule-based
+   "Habit Insights" computed from your existing check-in data.
+   Requires: OrbitBridge (getHabits, getCheckins, todayKey,
+   addDaysKey, on) and anchors #an-heatmap, #an-weeks, #an-insights.
+   ============================================================ */
+(() => {
+  'use strict';
+  const B = window.OrbitBridge;
+  const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+  function collect() {
+    const habits = B.getHabits();
+    return habits.map(h => ({ ...h, dates: new Set(B.getCheckins(h.id)) }));
+  }
+
+  // completion for one day: habits existing that day vs habits done
+  function dayStats(habits, key) {
+    let due = 0, done = 0;
+    for (const h of habits) {
+      if (h.createdAt > key) continue;
+      due++;
+      if (h.dates.has(key)) done++;
+    }
+    return { due, done };
+  }
+
+  // ---- heatmap (182 days) ----
+  function renderHeatmap(habits) {
+    const grid = document.getElementById('an-heatmap');
+    grid.innerHTML = '';
+    const wrap = document.createElement('div');
+    wrap.className = 'an-heatmap';
+    const today = B.todayKey();
+    const start = B.addDaysKey(today, -181);
+    // pad so columns are weeks starting Monday
+    const startDow = new Date(start + 'T00:00').getDay();
+    for (let i = 0; i < (startDow + 6) % 7; i++) {
+      const pad = document.createElement('i');
+      pad.className = 'an-cell';
+      pad.style.visibility = 'hidden';
+      wrap.appendChild(pad);
+    }
+    for (let k = start; k <= today; k = B.addDaysKey(k, 1)) {
+      const { due, done } = dayStats(habits, k);
+      const r = due ? done / due : 0;
+      const level = !due || !done ? 0 : r >= 1 ? 4 : r >= 0.75 ? 3 : r >= 0.5 ? 2 : 1;
+      const cell = document.createElement('i');
+      cell.className = 'an-cell' + (level ? ' an-l' + level : '');
+      cell.title = due ? `${k} — ${done}/${due} completed` : `${k} — no habits yet`;
+      wrap.appendChild(cell);
+    }
+    grid.appendChild(wrap);
+    const legend = document.createElement('div');
+    legend.className = 'an-legend';
+    legend.innerHTML = 'Less <i class="an-cell"></i><i class="an-cell an-l1"></i>' +
+      '<i class="an-cell an-l2"></i><i class="an-cell an-l3"></i><i class="an-cell an-l4"></i> More';
+    grid.appendChild(legend);
+  }
+
+  // ---- week-over-week ----
+  function weekRate(habits, endKey) {
+    let due = 0, done = 0;
+    for (let i = 0; i < 7; i++) {
+      const s = dayStats(habits, B.addDaysKey(endKey, -i));
+      due += s.due; done += s.done;
+    }
+    return { due, done, rate: due ? done / due : 0 };
+  }
+
+  function renderWeeks(habits) {
+    const el = document.getElementById('an-weeks');
+    const today = B.todayKey();
+    const weeks = [3, 2, 1, 0].map(n => {
+      const end = B.addDaysKey(today, -7 * n);
+      return { label: n === 0 ? 'This week' : n === 1 ? 'Last week' : `${n} wks ago`,
+               ...weekRate(habits, end), current: n === 0 };
+    });
+    el.innerHTML = '';
+    const row = document.createElement('div');
+    row.className = 'an-weeks';
+    for (const w of weeks) {
+      const col = document.createElement('div');
+      col.className = 'an-wk';
+      col.innerHTML =
+        `<span class="an-wk-val">${Math.round(w.rate * 100)}%</span>
+         <div class="an-wk-bar ${w.current ? 'current' : ''}" style="height:${Math.max(4, w.rate * 70)}px"
+              title="${w.done}/${w.due} check-ins"></div>
+         <span class="an-wk-label">${w.label}</span>`;
+      row.appendChild(col);
+    }
+    el.appendChild(row);
+  }
+
+  // ---- insights ----
+  function buildInsights(habits) {
+    const out = [];
+    const today = B.todayKey();
+    const totalCheckins = habits.reduce((n, h) => n + h.dates.size, 0);
+    if (!habits.length || !totalCheckins) {
+      return [{ icon: '🔭', text: 'Not enough data yet — check in for a few days and insights will appear here.' }];
+    }
+
+    // weekday performance over last 28 days
+    const byDow = Array.from({ length: 7 }, () => ({ due: 0, done: 0 }));
+    for (let i = 0; i < 28; i++) {
+      const k = B.addDaysKey(today, -i);
+      const dow = new Date(k + 'T00:00').getDay();
+      const s = dayStats(habits, k);
+      byDow[dow].due += s.due; byDow[dow].done += s.done;
+    }
+    const rated = byDow.map((s, dow) => ({ dow, rate: s.due ? s.done / s.due : 0, due: s.due }))
+      .filter(x => x.due >= 4);
+    if (rated.length >= 2) {
+      const best = rated.reduce((a, b) => (b.rate > a.rate ? b : a));
+      const worst = rated.reduce((a, b) => (b.rate < a.rate ? b : a));
+      if (best.rate > 0 && best.dow !== worst.dow) {
+        out.push({ icon: '📈', text: `${DAY_NAMES[best.dow]}s are your power day — ${Math.round(best.rate * 100)}% completion over the last 4 weeks.` });
+        if (best.rate - worst.rate >= 0.25)
+          out.push({ icon: '🧲', text: `${DAY_NAMES[worst.dow]}s are your weak spot (${Math.round(worst.rate * 100)}%). Try scheduling your easiest habit first that day.` });
+      }
+    }
+
+    // streak encouragement
+    const longestStreak = (dates) => {
+      const sorted = [...dates].sort();
+      let best = 0, run = 0, prev = null;
+      for (const d of sorted) {
+        run = (prev && B.addDaysKey(prev, 1) === d) ? run + 1 : 1;
+        if (run > best) best = run;
+        prev = d;
+      }
+      return best;
+    };
+    const currentStreak = (dates) => {
+      let k = dates.has(today) ? today : B.addDaysKey(today, -1);
+      let n = 0;
+      while (dates.has(k)) { n++; k = B.addDaysKey(k, -1); }
+      return n;
+    };
+    for (const h of habits) {
+      const best = longestStreak(h.dates);
+      const cur = currentStreak(h.dates);
+      if (best >= 5 && cur > 0 && cur < best) {
+        out.push({ icon: '🏔️', text: `Your best “${h.name}” streak was ${best} days — you're at ${cur} now. Beat it!` });
+        break;
+      }
+    }
+
+    // failure pattern: previously active habit gone quiet
+    for (const h of habits) {
+      if (h.dates.size < 3) continue;
+      let missed = 0;
+      for (let i = 1; i <= 7; i++) {
+        if (h.dates.has(B.addDaysKey(today, -i))) break;
+        missed++;
+      }
+      if (missed >= 3) {
+        out.push({ icon: '🕳️', text: `“${h.name}” has slipped for ${missed}+ days. A 2-minute version today restarts the orbit.` });
+        break;
+      }
+    }
+
+    // momentum
+    const thisW = weekRate(habits, today);
+    const lastW = weekRate(habits, B.addDaysKey(today, -7));
+    if (lastW.due > 0 && thisW.due > 0) {
+      const diff = Math.round((thisW.rate - lastW.rate) * 100);
+      if (diff >= 10) out.push({ icon: '🚀', text: `Momentum is up — completion is ${diff} points higher than last week.` });
+      else if (diff <= -10) out.push({ icon: '🪂', text: `Completion dipped ${-diff} points vs last week. Pick ONE habit to protect today.` });
+    }
+
+    if (totalCheckins >= 10)
+      out.push({ icon: '🛰️', text: `${totalCheckins} total check-ins logged. Every one keeps you in orbit.` });
+    return out.slice(0, 5);
+  }
+
+  function renderInsights(habits) {
+    const el = document.getElementById('an-insights');
+    el.innerHTML = '';
+    for (const ins of buildInsights(habits)) {
+      const row = document.createElement('div');
+      row.className = 'an-insight';
+      row.innerHTML = `<span class="i-icon">${ins.icon}</span><span>${ins.text}</span>`;
+      el.appendChild(row);
+    }
+  }
+
+  function refresh() {
+    const habits = collect();
+    renderHeatmap(habits);
+    renderWeeks(habits);
+    renderInsights(habits);
+  }
+
+  B.on('render', refresh);
+  B.on('checkin', refresh);
+  B.on('habits-changed', refresh);
+  refresh();
+})();
+</script>
+
+<script>
+/* ============================================================
+   ORBIT COACH — goal-based gym & exercise recommendations.
+   Framed around goals (lose / build / balance) and starting
+   point, never body labels. Pro feature, free during beta.
+   ============================================================ */
+(() => {
+  'use strict';
+  const B = window.OrbitBridge;
+
+  const DISCLAIMER = 'Orbit Coach shares general wellness ideas, not medical advice. ' +
+    'If you have a health condition, are pregnant, or are planning a big change, ' +
+    'talk to a doctor or qualified trainer first — and stop any exercise that causes pain.';
+
+  const QUESTIONS = [
+    { q: "What's your goal right now?", key: 'goal', a: [
+      ['🔥 Lose weight, feel lighter', 'lose'],
+      ['💪 Build muscle & strength', 'build'],
+      ['⚖️ Stay balanced & healthy', 'balance']] },
+    { q: 'Where are you starting from?', key: 'level', a: [
+      ['🌱 Just getting started', 'start'],
+      ['🚶 Somewhat active', 'active'],
+      ['🏃 Very active already', 'active']] },
+  ];
+
+  const PLANS = {
+    'lose-start': { icon: '🚶', name: 'Gentle Momentum',
+      blurb: 'Low-impact, joint-friendly, sustainable. The goal is showing up, not suffering.',
+      habits: [
+        { name: '20-minute walk', icon: '🚶', color: '#3dbb6e' },
+        { name: 'Water before every meal', icon: '💧', color: '#3d9fe8' },
+        { name: 'Vegetables on every plate', icon: '🥦', color: '#3dbb6e' },
+        { name: '5-minute evening stretch', icon: '🤸', color: '#7c5ce7' },
+        { name: 'In bed by 11pm', icon: '🛏️', color: '#55449b' }] },
+    'lose-active': { icon: '🔥', name: 'Burn & Build',
+      blurb: 'You already move — now aim it. Cardio base, strength to protect muscle, fuel that helps.',
+      habits: [
+        { name: '30-minute cardio session', icon: '🏃', color: '#e05252' },
+        { name: 'Strength training 20 min', icon: '🏋️', color: '#e8a33d' },
+        { name: '10k steps', icon: '👟', color: '#3dbb6e' },
+        { name: 'No sugary drinks', icon: '🥤', color: '#3d9fe8' },
+        { name: 'Protein at breakfast', icon: '🍳', color: '#e8a33d' }] },
+    'build-start': { icon: '🧱', name: 'Foundation',
+      blurb: 'Strength starts with consistency, not load. Bodyweight first, protein and sleep do the building.',
+      habits: [
+        { name: 'Bodyweight basics 15 min', icon: '💪', color: '#e8a33d' },
+        { name: 'Protein with every meal', icon: '🍗', color: '#e05252' },
+        { name: 'Sleep 8 hours', icon: '😴', color: '#55449b' },
+        { name: 'Morning mobility 5 min', icon: '🤸', color: '#7c5ce7' }] },
+    'build-active': { icon: '🏋️', name: 'Progressive Overload',
+      blurb: 'Structured lifting, tracked recovery. The gains live in the boring repeatable weeks.',
+      habits: [
+        { name: 'Gym session (log the lifts)', icon: '🏋️', color: '#e8a33d' },
+        { name: 'Hit daily protein target', icon: '🍗', color: '#e05252' },
+        { name: 'Mobility work 10 min', icon: '🧘', color: '#7c5ce7' },
+        { name: 'Sleep 8 hours', icon: '😴', color: '#55449b' },
+        { name: 'Creatine / supplements', icon: '💊', color: '#3d9fe8' }] },
+    'balance-start': { icon: '🌿', name: 'Steady Orbit',
+      blurb: 'Small daily anchors that keep energy, mood, and sleep in a stable rotation.',
+      habits: [
+        { name: 'Daily walk outside', icon: '🌳', color: '#3dbb6e' },
+        { name: 'Drink 2L water', icon: '💧', color: '#3d9fe8' },
+        { name: 'Stretch 5 minutes', icon: '🤸', color: '#7c5ce7' },
+        { name: 'Screens off by 10pm', icon: '📵', color: '#55449b' }] },
+    'balance-active': { icon: '⚖️', name: 'Peak Maintenance',
+      blurb: 'You’ve built it — this keeps it. Training variety plus the recovery habits that make it stick.',
+      habits: [
+        { name: 'Workout (mix it up)', icon: '🏋️', color: '#e8a33d' },
+        { name: 'Meditate 10 min', icon: '🧘', color: '#7c5ce7' },
+        { name: 'Prep tomorrow’s meals', icon: '🥗', color: '#3dbb6e' },
+        { name: 'Sleep 8 hours', icon: '😴', color: '#55449b' }] },
+  };
+
+  let backdrop = null;
+  let step = 0;
+  const picked = {};
+
+  function close() { backdrop?.remove(); backdrop = null; }
+
+  function modalShell() {
+    backdrop = document.createElement('div');
+    backdrop.className = 'tpl-backdrop';
+    const modal = document.createElement('div');
+    modal.className = 'tpl-modal';
+    modal.id = 'coach-modal';
+    backdrop.appendChild(modal);
+    backdrop.onclick = (e) => { if (e.target === backdrop) close(); };
+    document.body.appendChild(backdrop);
+    return modal;
+  }
+
+  function renderStep(modal) {
+    if (step >= QUESTIONS.length) return renderPlan(modal);
+    const { q, a, key } = QUESTIONS[step];
+    modal.innerHTML =
+      `<h2>💪 Orbit Coach <span class="coach-pro-pill">Pro · free in beta</span></h2>
+       <p class="muted">Two questions, one plan built for you.</p>
+       <p class="coach-q">${q}</p>
+       <div class="coach-answers"></div>
+       <p class="coach-disclaimer">${DISCLAIMER}</p>`;
+    const wrap = modal.querySelector('.coach-answers');
+    for (const [label, value] of a) {
+      const btn = document.createElement('button');
+      btn.className = 'coach-answer';
+      btn.textContent = label;
+      btn.onclick = () => { picked[key] = value; step++; renderStep(modal); };
+      wrap.appendChild(btn);
+    }
+  }
+
+  function renderPlan(modal) {
+    const plan = PLANS[`${picked.goal}-${picked.level}`];
+    modal.innerHTML =
+      `<h2>${plan.icon} ${plan.name} <span class="coach-pro-pill">Your plan</span></h2>
+       <p class="muted">${plan.blurb}</p>
+       <div class="tpl-habits" style="margin:14px 0">${plan.habits
+         .map(h => `<span class="tpl-chip">${h.icon} ${h.name}</span>`).join('')}</div>
+       <p class="coach-disclaimer">${DISCLAIMER}</p>
+       <div class="modal-actions" style="display:flex;gap:8px">
+         <button class="tpl-import" id="coach-add">Add these ${plan.habits.length} habits</button>
+         <button class="btn" id="coach-redo">Start over</button>
+         <button class="btn" id="coach-close">Close</button>
+       </div>`;
+    modal.querySelector('#coach-add').onclick = (e) => {
+      const existing = new Set(B.getHabits().map(h => h.name.trim().toLowerCase()));
+      let added = 0;
+      for (const h of plan.habits) {
+        if (existing.has(h.name.trim().toLowerCase())) continue;
+        B.addHabit(h); added++;
+      }
+      e.target.disabled = true;
+      e.target.textContent = added ? `✓ Added ${added}` : '✓ Already in your orbit';
+    };
+    modal.querySelector('#coach-redo').onclick = () => { step = 0; renderStep(modal); };
+    modal.querySelector('#coach-close').onclick = close;
+  }
+
+  document.getElementById('coach-open').onclick = () => {
+    step = 0;
+    renderStep(modalShell());
+  };
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+})();
+</script>
+
+<script>
+/* ============================================================
+   LEGAL — Terms of Service & Privacy Policy modals.
+   Opened from any element with data-legal="terms|privacy".
+   ============================================================ */
+(() => {
+  'use strict';
+  const UPDATED = 'Last updated: July 7, 2026';
+
+  const TERMS = `
+    <h3>1. Agreement</h3>
+    <p>By using Orbit ("the app") you agree to these terms. If you don't agree, please don't use the app.</p>
+    <h3>2. The service</h3>
+    <p>Orbit is a local-first habit tracker currently in beta. Features may change, break, or be removed while we build. The app runs on your device and stores your data there.</p>
+    <h3>3. Not medical advice</h3>
+    <p>Orbit — including Orbit Coach, templates, and insights — provides general wellness and fitness information only. It is not medical, nutritional, or professional advice, and no coach-client or doctor-patient relationship is created.</p>
+    <ul>
+      <li>Consult a physician before starting any exercise or weight-management program, especially if you have a health condition, an injury, or are pregnant.</li>
+      <li>Stop any activity that causes pain, dizziness, or shortness of breath and seek medical help.</li>
+      <li>You use all suggestions at your own risk and judgment.</li>
+    </ul>
+    <h3>4. Your data, your responsibility</h3>
+    <p>Your habits and progress live in your browser's local storage. Clearing browser data erases them. Use the Export button to keep backups — we can't recover lost local data.</p>
+    <h3>5. Orbit Pro (when available)</h3>
+    <p>Pro is not yet on sale. When it launches: prices will be shown before purchase; subscriptions renew monthly or yearly until cancelled; cancelling stops the next renewal and Pro stays active until the paid period ends; founding-member pricing offered during beta will be honored.</p>
+    <h3>6. Acceptable use</h3>
+    <p>Don't misuse the app, attempt to disrupt it, or use it for anything unlawful.</p>
+    <h3>7. Intellectual property</h3>
+    <p>The Orbit name, design, and code remain ours. Your data remains yours.</p>
+    <h3>8. No warranty & limitation of liability</h3>
+    <p>The app is provided "as is", without warranties of any kind. To the maximum extent permitted by law, we are not liable for indirect or consequential damages, data loss, or injuries arising from use of the app or its suggestions.</p>
+    <h3>9. Changes</h3>
+    <p>We may update these terms; the "last updated" date will change and continued use means acceptance.</p>
+    <h3>10. Contact</h3>
+    <p>Questions: hello@orbit.example</p>`;
+
+  const PRIVACY = `
+    <h3>The short version</h3>
+    <p><b>Everything stays on your device.</b> Orbit has no servers, no accounts, and no tracking. We literally cannot see your data.</p>
+    <h3>1. What Orbit stores (locally)</h3>
+    <ul>
+      <li>Your habits, check-ins, XP progress, badges, and settings — in your browser's local storage.</li>
+      <li>Your email, only if you join the newsletter or Pro waitlist — also stored locally for now (see 3).</li>
+    </ul>
+    <h3>2. What we never collect</h3>
+    <p>No analytics, no cookies beyond local storage, no ads, no third-party trackers, no selling or sharing of data — there is nothing to sell because nothing leaves your device.</p>
+    <h3>3. Your email</h3>
+    <p>During beta, waitlist emails are saved on your device only and no messages are sent. When Orbit gains a backend, we'll ask for your consent again before anything is transmitted or sent to you. Unsubscribing will always be one click.</p>
+    <h3>4. Health-related information</h3>
+    <p>Habit names and coach answers may reveal information about your health or fitness. That information stays in local storage under your control and is never transmitted.</p>
+    <h3>5. Export & deletion</h3>
+    <p>Export your data anytime with the Export button (JSON). Delete everything by removing habits in the app or clearing this site's browser storage — the erasure is immediate and permanent.</p>
+    <h3>6. Children</h3>
+    <p>Orbit is not directed at children under 13.</p>
+    <h3>7. Changes</h3>
+    <p>If our practices ever change (for example, when cloud sync ships), this policy will be updated first and the change will be opt-in.</p>
+    <h3>8. Contact</h3>
+    <p>privacy@orbit.example</p>`;
+
+  let backdrop = null;
+  function close() { backdrop?.remove(); backdrop = null; }
+
+  function open(kind) {
+    close();
+    backdrop = document.createElement('div');
+    backdrop.className = 'tpl-backdrop';
+    const modal = document.createElement('div');
+    modal.className = 'tpl-modal';
+    modal.id = 'legal-modal';
+    modal.innerHTML =
+      `<h2>${kind === 'terms' ? '📄 Terms of Service' : '🔒 Privacy Policy'}</h2>
+       <p class="legal-updated">${UPDATED}</p>
+       <div class="legal-body">${kind === 'terms' ? TERMS : PRIVACY}</div>
+       <button class="btn tpl-close" id="legal-close">Close</button>`;
+    modal.querySelector('#legal-close').onclick = close;
+    backdrop.onclick = (e) => { if (e.target === backdrop) close(); };
+    backdrop.appendChild(modal);
+    document.body.appendChild(backdrop);
+  }
+
+  document.addEventListener('click', (e) => {
+    const el = e.target.closest('[data-legal]');
+    if (el) open(el.dataset.legal);
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+})();
+</script>
+
+<script>
+/* ============================================================
+   LANDING PAGE — hero, hook quiz, subscribe, launch gate.
+   Shows on first visit; returning users (entered flag or any
+   existing habits) go straight to the app. The quiz maps answers
+   onto the template library and launches with it pre-imported.
+   ============================================================ */
+(() => {
+  'use strict';
+  const B = window.OrbitBridge;
+  const $ = (s) => document.querySelector(s);
+  const landing = $('#landing');
+  const appRoot = $('#app-root');
+  const lsGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch { /* sandboxed */ } };
+
+  function showApp() {
+    lsSet('orbit.entered', '1');
+    landing.classList.add('hidden');
+    appRoot.classList.remove('hidden');
+    B.emit('render', {});
+  }
+  function showLanding() {
+    landing.classList.remove('hidden');
+    appRoot.classList.add('hidden');
+    scrollTo(0, 0);
+    startStars();
+  }
+
+  // ---- starfield ----
+  let starsStarted = false;
+  function startStars() {
+    if (starsStarted) return;
+    starsStarted = true;
+    const canvas = $('#ld-stars');
+    const ctx = canvas.getContext('2d');
+    const hero = canvas.parentElement;
+    const stars = Array.from({ length: 130 }, () => ({
+      x: Math.random(), y: Math.random(), r: Math.random() * 1.4 + .3,
+      tw: Math.random() * Math.PI * 2, sp: .4 + Math.random() * .8,
+    }));
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function draw(t) {
+      canvas.width = hero.clientWidth;
+      canvas.height = hero.clientHeight;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const s of stars) {
+        const a = still ? .7 : .35 + .5 * Math.abs(Math.sin(t / 1400 * s.sp + s.tw));
+        ctx.globalAlpha = a;
+        ctx.fillStyle = '#cfcbee';
+        ctx.beginPath();
+        ctx.arc(s.x * canvas.width, s.y * canvas.height, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (!still && !landing.classList.contains('hidden')) requestAnimationFrame(draw);
+      else starsStarted = false;
+    }
+    requestAnimationFrame(draw);
+  }
+
+  // ---- hook quiz ----
+  const QUIZ = [
+    { q: 'What do you want more of in your life?', a: [
+      ['⚡ Energy & fitness', { tpl: 'fitness' }],
+      ['🎯 Focus at work', { tpl: 'productivity' }],
+      ['🌅 Calmer mornings', { tpl: 'morning' }],
+      ['🍎 Overall health', { tpl: 'health' }]] },
+    { q: 'Be honest — how do your habit attempts usually end?', a: [
+      ['🔥 Strong start, week-two fade', { why: 'Motivation fades — momentum doesn’t. Orbit makes your streak visible, so week two finally has something to lose.' }],
+      ['🙈 I just forget they exist', { why: 'Out of sight, out of orbit. One page, one glance, one tap — and streaks that miss you back.' }],
+      ['🌪️ Life gets in the way', { why: 'Life will interrupt — Orbit counts the comeback, not the miss. One tap and you’re back in rotation.' }],
+      ['🌱 This is my first real try', { why: 'Clean slate — no bad patterns to unlearn. Start tiny and let gravity do the rest.' }]] },
+    { q: 'How much time can you actually give per day?', a: [
+      ['5 minutes', { time: 'Five focused minutes beat a perfect plan. Your routine starts tiny on purpose.' }],
+      ['15 minutes', { time: 'Fifteen minutes is the habit sweet spot — enough to matter, easy to protect.' }],
+      ['30+ minutes', { time: 'With half an hour a day, your only job is showing up. Orbit handles the proof.' }]] },
+  ];
+
+  const card = $('#ld-quiz-card');
+  let step = 0;
+  const picked = {};
+
+  function renderQuiz() {
+    if (step >= QUIZ.length) return renderPlan();
+    const { q, a } = QUIZ[step];
+    card.innerHTML =
+      `<div class="ld-progress">${QUIZ.map((_, i) => `<i class="${i <= step ? 'on' : ''}"></i>`).join('')}</div>
+       <p class="ld-mono">Question ${step + 1} of ${QUIZ.length}</p>
+       <p class="ld-q">${q}</p>
+       <div class="ld-answers"></div>`;
+    const wrap = card.querySelector('.ld-answers');
+    for (const [label, data] of a) {
+      const btn = document.createElement('button');
+      btn.className = 'ld-answer';
+      btn.textContent = label;
+      btn.onclick = () => { Object.assign(picked, data); step++; renderQuiz(); };
+      wrap.appendChild(btn);
+    }
+  }
+
+  function renderPlan() {
+    const tpl = (window.OrbitTemplates?.list() || []).find(t => t.id === picked.tpl);
+    card.innerHTML =
+      `<div class="ld-progress">${QUIZ.map(() => '<i class="on"></i>').join('')}</div>
+       <p class="ld-mono">Your flight plan</p>
+       <p class="ld-q">${tpl ? `${tpl.icon} ${tpl.name}` : 'Custom orbit'} — ready for launch.</p>
+       <div class="ld-plan-chips">${(tpl?.habits || []).map(h => `<span>${h.icon} ${h.name}</span>`).join('')}</div>
+       <p class="ld-plan-msg">${picked.why || ''} ${picked.time || ''}</p>
+       <div class="ld-cta-row" style="justify-content:flex-start">
+         <button class="ld-btn solid" id="ld-launch-tpl">🚀 Launch with this routine</button>
+         <button class="ld-btn" id="ld-launch-empty">Start empty instead</button>
+       </div>`;
+    card.querySelector('#ld-launch-tpl').onclick = () => {
+      if (picked.tpl) window.OrbitTemplates?.importById(picked.tpl);
+      showApp();
+    };
+    card.querySelector('#ld-launch-empty').onclick = showApp;
+  }
+
+  // ---- subscribe (local-first: stored on device) ----
+  let proIntent = false;
+  $('#ld-subscribe').onclick = () => {
+    const input = $('#ld-email');
+    const email = input.value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      $('#ld-sub-note').textContent = 'That email doesn’t look right — try again?';
+      input.focus();
+      return;
+    }
+    let list;
+    try { list = JSON.parse(lsGet('orbit.subscribers')) || []; } catch { list = []; }
+    if (!list.includes(email)) list.push(email);
+    lsSet('orbit.subscribers', JSON.stringify(list));
+    if (proIntent) {
+      let pro;
+      try { pro = JSON.parse(lsGet('orbit.proWaitlist')) || []; } catch { pro = []; }
+      if (!pro.includes(email)) pro.push(email);
+      lsSet('orbit.proWaitlist', JSON.stringify(pro));
+    }
+    input.value = '';
+    $('#ld-sub-note').textContent = proIntent
+      ? '🚀 You’re a founding member — your $2.99/mo price is noted. Your email stays on this device until Orbit grows a backend.'
+      : '✨ You’re on the list. Reports will appear when Orbit grows a backend — your email stays on this device until then.';
+    proIntent = false;
+  };
+
+  // ---- pricing CTAs ----
+  $('#ld-free-cta').onclick = showApp;
+  $('#ld-pro-cta').onclick = () => {
+    proIntent = true;
+    $('#ld-sub-note').textContent = '🚀 Founding waitlist: drop your email to lock $2.99/mo forever when Pro ships.';
+    $('#ld-email').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    $('#ld-email').focus({ preventScroll: true });
+  };
+
+  // ---- wiring & gate ----
+  $('#ld-skip').onclick = showApp;
+  $('#ld-launch').onclick = showApp;
+  $('#ld-quiz-cta').onclick = () => $('#ld-quiz').scrollIntoView({ behavior: 'smooth' });
+  $('#app-logo').onclick = showLanding;
+
+  renderQuiz();
+  const returning = lsGet('orbit.entered') === '1' || B.getHabits().length > 0;
+  if (returning) showApp(); else showLanding();
+})();
+</script>
+</body>
+</html>
