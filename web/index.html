@@ -144,6 +144,7 @@ h2 { font-size: 1.02rem; margin-bottom: 10px; }
   <header>
     <h1>🪐 Orbit</h1>
     <button class="btn" id="dark-toggle" title="Toggle dark mode">🌙</button>
+    <button class="btn" id="demo-btn" title="Load 5 weeks of sample data">🎲 Demo</button>
     <button class="btn" id="export-btn">Export</button>
     <!-- FEATURE 2 anchor -->
     <button class="btn" id="tpl-open">📦 Templates</button>
@@ -215,11 +216,17 @@ h2 { font-size: 1.02rem; margin-bottom: 10px; }
   'use strict';
   const LS = { habits: 'orbit.habits', checkins: 'orbit.checkins', settings: 'orbit.settings' };
   const load = (k, f) => { try { return JSON.parse(localStorage.getItem(k)) ?? f; } catch { return f; } };
-  const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+  const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* sandboxed */ } };
 
   let habits = load(LS.habits, []);          // [{id, name, icon, color, createdAt}]
   let checkins = load(LS.checkins, {});      // { habitId: ['YYYY-MM-DD', ...] }
-  let settings = load(LS.settings, { dark: true });
+  let settings = load(LS.settings, {});
+  if (typeof settings.dark !== 'boolean') {
+    // first run: follow the host/OS theme (artifact viewer stamps data-theme on <html>)
+    const rootTheme = document.documentElement.dataset.theme;
+    settings.dark = rootTheme ? rootTheme === 'dark'
+      : matchMedia('(prefers-color-scheme: dark)').matches;
+  }
 
   const dateKey = (d = new Date()) =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -314,11 +321,18 @@ h2 { font-size: 1.02rem; margin-bottom: 10px; }
         `<button class="h-del" title="Delete">✕</button>` +
         `<button class="h-check ${done ? 'done' : ''}">✓</button>`;
       row.querySelector('.h-check').onclick = () => toggle(h.id);
-      row.querySelector('.h-del').onclick = () => {
-        if (confirm(`Delete “${h.name}” and its history?`)) {
+      // two-click delete confirm (native confirm() is blocked in sandboxed embeds)
+      row.querySelector('.h-del').onclick = (e) => {
+        const btn = e.currentTarget;
+        if (btn.dataset.arm) {
           habits = habits.filter(x => x.id !== h.id); delete checkins[h.id];
           persist(); render(); window.OrbitBridge.emit('habits-changed', {});
+          return;
         }
+        btn.dataset.arm = '1'; btn.textContent = 'Sure?'; btn.style.color = 'var(--red)';
+        setTimeout(() => {
+          if (btn.isConnected) { delete btn.dataset.arm; btn.textContent = '✕'; btn.style.color = ''; }
+        }, 2500);
       };
       list.appendChild(row);
     }
@@ -377,6 +391,43 @@ h2 { font-size: 1.02rem; margin-bottom: 10px; }
     $('#add-name').value = '';
   };
   $('#dark-toggle').onclick = () => { settings.dark = !settings.dark; persist(); render(); };
+
+  // Demo seeder: 5 weeks of realistic history so streaks, badges, heatmap
+  // and every insight rule have data to show. Two-click confirm if data exists.
+  function seedDemo() {
+    const today = dateKey();
+    const created = addDays(today, -35);
+    const mk = (name, icon, color) => ({ id: crypto.randomUUID(), name, icon, color, createdAt: created });
+    const med = mk('Meditate 10 min', '🧘', '#7c5ce7');
+    const read = mk('Read 20 pages', '📚', '#3d9fe8');
+    const run = mk('Morning run', '🏃', '#e05252');
+    const water = mk('Drink 2L water', '💧', '#3dbb6e');
+    habits = [med, read, run, water];
+    checkins = { [med.id]: [], [read.id]: [], [run.id]: [], [water.id]: [] };
+    for (let i = 1; i <= 34; i++) {
+      const k = addDays(today, -i);
+      const dow = new Date(k + 'T00:00').getDay();
+      checkins[med.id].push(k);                                        // 34-day streak → Full Orbit badge
+      if ((i >= 1 && i <= 3) || (i >= 6 && i <= 15)) checkins[read.id].push(k); // best 10 vs current 3 → "beat it"
+      if (i >= 5 && i <= 24 && dow !== 5) checkins[run.id].push(k);    // quiet 4 days → "slipped" insight
+      if (dow !== 5 && (i * 7) % 10 < 6) checkins[water.id].push(k);   // Fridays weak → weekday insight
+    }
+    try { localStorage.removeItem('orbit.xp.seen'); } catch { /* sandboxed */ }
+    persist(); render();
+    window.OrbitBridge.emit('habits-changed', {});
+  }
+  $('#demo-btn').onclick = (e) => {
+    const btn = e.currentTarget;
+    if (habits.length && !btn.dataset.arm) {
+      btn.dataset.arm = '1'; btn.textContent = 'Replace data?';
+      setTimeout(() => {
+        if (btn.isConnected) { delete btn.dataset.arm; btn.textContent = '🎲 Demo'; }
+      }, 3000);
+      return;
+    }
+    delete btn.dataset.arm; btn.textContent = '🎲 Demo';
+    seedDemo();
+  };
   $('#export-btn').onclick = () => {
     const blob = new Blob([JSON.stringify({ habits, checkins, exportedAt: new Date().toISOString() }, null, 2)],
       { type: 'application/json' });
@@ -526,7 +577,7 @@ h2 { font-size: 1.02rem; margin-bottom: 10px; }
     for (const b of s.earned) {
       if (!seen.has(b.id)) { toast(`${b.icon} Badge unlocked: ${b.name}! +${XP_PER_BADGE} XP`); seen.add(b.id); }
     }
-    localStorage.setItem(LS_SEEN, JSON.stringify([...seen]));
+    try { localStorage.setItem(LS_SEEN, JSON.stringify([...seen])); } catch { /* sandboxed */ }
     if (lastLevel !== null && s.level > lastLevel) toast(`🚀 Level up! You reached level ${s.level}`);
     lastLevel = s.level;
   }
