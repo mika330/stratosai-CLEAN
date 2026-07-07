@@ -137,12 +137,160 @@ h2 { font-size: 1.02rem; margin-bottom: 10px; }
   border-bottom: 1px solid var(--border); font-size: .88rem; }
 .an-insight:last-child { border-bottom: none; }
 .an-insight .i-icon { font-size: 1.05rem; }
+
+/* ============================================================
+   LANDING PAGE — "Good habits have gravity"
+   Committed single-theme space world; the app keeps its toggle.
+   ============================================================ */
+#landing { background: #0b0b14; color: #eceaf8; min-height: 100vh; }
+#landing .ld-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .72rem; letter-spacing: .18em; color: #8f8da6; text-transform: uppercase; }
+.ld-hero { position: relative; min-height: 92vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; padding: 48px 20px 40px;
+  overflow: hidden; }
+#ld-stars { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ld-hero > * { position: relative; }
+.ld-system { width: 300px; height: 300px; position: relative; margin-bottom: 8px; flex-shrink: 0; }
+.ld-planet { position: absolute; left: 50%; top: 50%; width: 110px; height: 110px;
+  margin: -55px 0 0 -55px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #a29bfe, #7c5ce7 45%, #2c2058 85%);
+  box-shadow: 0 0 60px rgba(124, 92, 231, .45); }
+.ld-ringline { position: absolute; left: 50%; top: 50%; width: 190px; height: 64px;
+  margin: -32px 0 0 -95px; border: 2px solid rgba(162, 155, 254, .5); border-radius: 50%;
+  transform: rotate(-18deg); }
+.ld-orbit { position: absolute; inset: 0; animation: ld-spin linear infinite; }
+.ld-orbit span { position: absolute; left: 50%; top: 50%; font-size: 1.35rem;
+  animation: ld-counterspin linear infinite; animation-duration: inherit;
+  text-shadow: 0 0 12px rgba(0,0,0,.8); }
+.ld-orbit.o1 { animation-duration: 14s; } .ld-orbit.o1 span { transform: translate(78px, -12px); }
+.ld-orbit.o2 { animation-duration: 21s; } .ld-orbit.o2 span { transform: translate(-118px, -10px); }
+.ld-orbit.o3 { animation-duration: 29s; } .ld-orbit.o3 span { transform: translate(20px, -142px); }
+@keyframes ld-spin { to { transform: rotate(360deg); } }
+@keyframes ld-counterspin { from { rotate: 0deg; } to { rotate: -360deg; } }
+.ld-h1 { font-size: clamp(2.1rem, 6vw, 3.4rem); font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.06; margin: 14px 0 14px; text-wrap: balance; }
+.ld-h1 em { font-style: normal; color: #a29bfe; }
+.ld-sub { max-width: 34rem; color: #b9b7cd; font-size: 1.02rem; line-height: 1.55;
+  text-wrap: balance; }
+.ld-cta-row { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; justify-content: center; }
+.ld-btn { border-radius: 12px; padding: 13px 22px; font-size: .95rem; font-weight: 700;
+  border: 1px solid rgba(162,155,254,.35); background: transparent; color: #eceaf8; }
+.ld-btn:hover { border-color: #a29bfe; }
+.ld-btn.solid { background: #7c5ce7; border-color: #7c5ce7; color: #fff; }
+.ld-btn.solid:hover { background: #8d70ee; }
+.ld-facts { margin-top: 34px; }
+.ld-wrap { max-width: 640px; margin: 0 auto; padding: 56px 20px; }
+.ld-wrap h2 { font-size: 1.55rem; font-weight: 800; letter-spacing: -0.02em; margin: 10px 0 26px;
+  text-wrap: balance; }
+.ld-step { display: flex; gap: 16px; padding: 18px 0; border-top: 1px solid #232336;
+  align-items: flex-start; }
+.ld-step:last-of-type { border-bottom: 1px solid #232336; }
+.ld-step-n { font-family: ui-monospace, Menlo, Consolas, monospace; color: #7c5ce7;
+  font-weight: 700; font-size: .85rem; padding-top: 3px; }
+.ld-step b { display: block; margin-bottom: 4px; font-size: 1.02rem; }
+.ld-step p { color: #b9b7cd; font-size: .92rem; line-height: 1.5; }
+.ld-quiz-card { background: #12121e; border: 1px solid #232336; border-radius: 16px;
+  padding: 22px; min-height: 240px; }
+.ld-q { font-size: 1.15rem; font-weight: 700; margin: 6px 0 18px; text-wrap: balance; }
+.ld-answers { display: flex; flex-direction: column; gap: 9px; }
+.ld-answer { text-align: left; padding: 13px 16px; border-radius: 12px; font-size: .95rem;
+  border: 1px solid #2b2b42; background: #171726; color: #eceaf8; transition: all .15s; }
+.ld-answer:hover { border-color: #7c5ce7; transform: translateX(3px); }
+.ld-progress { display: flex; gap: 6px; margin-bottom: 4px; }
+.ld-progress i { height: 4px; flex: 1; border-radius: 2px; background: #232336; }
+.ld-progress i.on { background: #7c5ce7; }
+.ld-plan-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0; }
+.ld-plan-chips span { font-size: .78rem; background: #171726; border: 1px solid #2b2b42;
+  border-radius: 999px; padding: 4px 12px; }
+.ld-plan-msg { color: #b9b7cd; font-size: .92rem; line-height: 1.55; border-left: 3px solid #e8a33d;
+  padding-left: 12px; margin: 16px 0 20px; }
+.ld-sub-row { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+.ld-sub-row input { flex: 1; min-width: 200px; padding: 12px 14px; border-radius: 12px;
+  border: 1px solid #2b2b42; background: #171726; color: #eceaf8; font: inherit; }
+.ld-sub-row input:focus { outline: 2px solid #7c5ce7; outline-offset: 1px; }
+.ld-note { color: #8f8da6; font-size: .78rem; margin-top: 10px; }
+.ld-footer { text-align: center; padding: 30px 20px 48px; }
+#app-logo { cursor: pointer; }
+@media (prefers-reduced-motion: reduce) {
+  .ld-orbit { animation: none; } .ld-orbit span { animation: none; }
+}
 </style>
 </head>
 <body>
-<div class="wrap">
+<section id="landing" class="hidden">
+  <div class="ld-hero">
+    <canvas id="ld-stars"></canvas>
+    <div class="ld-system" aria-hidden="true">
+      <div class="ld-ringline"></div>
+      <div class="ld-planet"></div>
+      <div class="ld-orbit o1"><span>🏃</span></div>
+      <div class="ld-orbit o2"><span>📚</span></div>
+      <div class="ld-orbit o3"><span>🧘</span></div>
+    </div>
+    <p class="ld-mono">Orbit · a habit tracker with gravity</p>
+    <h1 class="ld-h1">Good habits<br />have <em>gravity</em>.</h1>
+    <p class="ld-sub">Most habit apps count your days. Orbit pulls you back for the next one —
+      streaks you can see, XP you can feel, and insights that know your weak spots
+      before you do.</p>
+    <div class="ld-cta-row">
+      <button class="ld-btn solid" id="ld-quiz-cta">Find my orbit ↓</button>
+      <button class="ld-btn" id="ld-skip">Skip the tour →</button>
+    </div>
+    <p class="ld-mono ld-facts">local-first · no account · free</p>
+  </div>
+
+  <div class="ld-wrap">
+    <p class="ld-mono">How it works</p>
+    <h2>Three moves. Every day the pull gets stronger.</h2>
+    <div class="ld-step">
+      <span class="ld-step-n">01</span>
+      <div><b>Check in with one tap</b>
+        <p>Your day on one page. Tap the ring, watch the progress fill, get confetti
+           when you clear the board.</p></div>
+    </div>
+    <div class="ld-step">
+      <span class="ld-step-n">02</span>
+      <div><b>Streaks make missing expensive</b>
+        <p>A 🔥 12-day streak is worth protecting. The 6-month heatmap turns your
+           consistency into something you can actually see.</p></div>
+    </div>
+    <div class="ld-step">
+      <span class="ld-step-n">03</span>
+      <div><b>Level up your orbit</b>
+        <p>Every check-in earns XP. Perfect days earn more. Badges drop at 7 and 30-day
+           streaks — and the insights engine tells you exactly which weekday is
+           sabotaging you.</p></div>
+    </div>
+  </div>
+
+  <div class="ld-wrap" id="ld-quiz">
+    <p class="ld-mono">Find your orbit · 30 seconds</p>
+    <h2>Three questions before launch.</h2>
+    <div class="ld-quiz-card" id="ld-quiz-card"></div>
+  </div>
+
+  <div class="ld-wrap">
+    <p class="ld-mono">Stay in the loop</p>
+    <h2>Get the weekly orbit report.</h2>
+    <p class="ld-sub">One email a week: your streaks, your XP, and one habit-science
+       idea worth trying. No spam — you're the whole point.</p>
+    <div class="ld-sub-row">
+      <input type="email" id="ld-email" placeholder="you@earth.com" autocomplete="email" />
+      <button class="ld-btn solid" id="ld-subscribe">Count me in</button>
+    </div>
+    <p class="ld-note" id="ld-sub-note">Saved on this device — Orbit is local-first and your
+       data never leaves it.</p>
+  </div>
+
+  <div class="ld-footer">
+    <button class="ld-btn solid" id="ld-launch">🚀 Launch Orbit</button>
+    <p class="ld-mono ld-facts">your data stays on this device</p>
+  </div>
+</section>
+
+<div class="wrap hidden" id="app-root">
   <header>
-    <h1>🪐 Orbit</h1>
+    <h1 id="app-logo" title="About Orbit">🪐 Orbit</h1>
     <button class="btn" id="dark-toggle" title="Toggle dark mode">🌙</button>
     <button class="btn" id="demo-btn" title="Load 5 weeks of sample data">🎲 Demo</button>
     <button class="btn" id="export-btn">Export</button>
@@ -687,6 +835,16 @@ h2 { font-size: 1.02rem; margin-bottom: 10px; }
 
   document.getElementById('tpl-open').onclick = open;
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+  // programmatic import (used by the landing quiz's "launch with routine")
+  window.OrbitTemplates = {
+    importById: (id) => {
+      const tpl = TEMPLATES.find(t => t.id === id);
+      if (tpl) importTemplate(tpl, document.createElement('button'));
+      return Boolean(tpl);
+    },
+    list: () => TEMPLATES.map(t => ({ id: t.id, icon: t.icon, name: t.name, habits: t.habits })),
+  };
 })();
 </script>
 
@@ -891,6 +1049,154 @@ h2 { font-size: 1.02rem; margin-bottom: 10px; }
   B.on('checkin', refresh);
   B.on('habits-changed', refresh);
   refresh();
+})();
+</script>
+
+<script>
+/* ============================================================
+   LANDING PAGE — hero, hook quiz, subscribe, launch gate.
+   Shows on first visit; returning users (entered flag or any
+   existing habits) go straight to the app. The quiz maps answers
+   onto the template library and launches with it pre-imported.
+   ============================================================ */
+(() => {
+  'use strict';
+  const B = window.OrbitBridge;
+  const $ = (s) => document.querySelector(s);
+  const landing = $('#landing');
+  const appRoot = $('#app-root');
+  const lsGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch { /* sandboxed */ } };
+
+  function showApp() {
+    lsSet('orbit.entered', '1');
+    landing.classList.add('hidden');
+    appRoot.classList.remove('hidden');
+    B.emit('render', {});
+  }
+  function showLanding() {
+    landing.classList.remove('hidden');
+    appRoot.classList.add('hidden');
+    scrollTo(0, 0);
+    startStars();
+  }
+
+  // ---- starfield ----
+  let starsStarted = false;
+  function startStars() {
+    if (starsStarted) return;
+    starsStarted = true;
+    const canvas = $('#ld-stars');
+    const ctx = canvas.getContext('2d');
+    const hero = canvas.parentElement;
+    const stars = Array.from({ length: 130 }, () => ({
+      x: Math.random(), y: Math.random(), r: Math.random() * 1.4 + .3,
+      tw: Math.random() * Math.PI * 2, sp: .4 + Math.random() * .8,
+    }));
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function draw(t) {
+      canvas.width = hero.clientWidth;
+      canvas.height = hero.clientHeight;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const s of stars) {
+        const a = still ? .7 : .35 + .5 * Math.abs(Math.sin(t / 1400 * s.sp + s.tw));
+        ctx.globalAlpha = a;
+        ctx.fillStyle = '#cfcbee';
+        ctx.beginPath();
+        ctx.arc(s.x * canvas.width, s.y * canvas.height, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (!still && !landing.classList.contains('hidden')) requestAnimationFrame(draw);
+      else starsStarted = false;
+    }
+    requestAnimationFrame(draw);
+  }
+
+  // ---- hook quiz ----
+  const QUIZ = [
+    { q: 'What do you want more of in your life?', a: [
+      ['⚡ Energy & fitness', { tpl: 'fitness' }],
+      ['🎯 Focus at work', { tpl: 'productivity' }],
+      ['🌅 Calmer mornings', { tpl: 'morning' }],
+      ['🍎 Overall health', { tpl: 'health' }]] },
+    { q: 'Be honest — how do your habit attempts usually end?', a: [
+      ['🔥 Strong start, week-two fade', { why: 'Motivation fades — momentum doesn’t. Orbit makes your streak visible, so week two finally has something to lose.' }],
+      ['🙈 I just forget they exist', { why: 'Out of sight, out of orbit. One page, one glance, one tap — and streaks that miss you back.' }],
+      ['🌪️ Life gets in the way', { why: 'Life will interrupt — Orbit counts the comeback, not the miss. One tap and you’re back in rotation.' }],
+      ['🌱 This is my first real try', { why: 'Clean slate — no bad patterns to unlearn. Start tiny and let gravity do the rest.' }]] },
+    { q: 'How much time can you actually give per day?', a: [
+      ['5 minutes', { time: 'Five focused minutes beat a perfect plan. Your routine starts tiny on purpose.' }],
+      ['15 minutes', { time: 'Fifteen minutes is the habit sweet spot — enough to matter, easy to protect.' }],
+      ['30+ minutes', { time: 'With half an hour a day, your only job is showing up. Orbit handles the proof.' }]] },
+  ];
+
+  const card = $('#ld-quiz-card');
+  let step = 0;
+  const picked = {};
+
+  function renderQuiz() {
+    if (step >= QUIZ.length) return renderPlan();
+    const { q, a } = QUIZ[step];
+    card.innerHTML =
+      `<div class="ld-progress">${QUIZ.map((_, i) => `<i class="${i <= step ? 'on' : ''}"></i>`).join('')}</div>
+       <p class="ld-mono">Question ${step + 1} of ${QUIZ.length}</p>
+       <p class="ld-q">${q}</p>
+       <div class="ld-answers"></div>`;
+    const wrap = card.querySelector('.ld-answers');
+    for (const [label, data] of a) {
+      const btn = document.createElement('button');
+      btn.className = 'ld-answer';
+      btn.textContent = label;
+      btn.onclick = () => { Object.assign(picked, data); step++; renderQuiz(); };
+      wrap.appendChild(btn);
+    }
+  }
+
+  function renderPlan() {
+    const tpl = (window.OrbitTemplates?.list() || []).find(t => t.id === picked.tpl);
+    card.innerHTML =
+      `<div class="ld-progress">${QUIZ.map(() => '<i class="on"></i>').join('')}</div>
+       <p class="ld-mono">Your flight plan</p>
+       <p class="ld-q">${tpl ? `${tpl.icon} ${tpl.name}` : 'Custom orbit'} — ready for launch.</p>
+       <div class="ld-plan-chips">${(tpl?.habits || []).map(h => `<span>${h.icon} ${h.name}</span>`).join('')}</div>
+       <p class="ld-plan-msg">${picked.why || ''} ${picked.time || ''}</p>
+       <div class="ld-cta-row" style="justify-content:flex-start">
+         <button class="ld-btn solid" id="ld-launch-tpl">🚀 Launch with this routine</button>
+         <button class="ld-btn" id="ld-launch-empty">Start empty instead</button>
+       </div>`;
+    card.querySelector('#ld-launch-tpl').onclick = () => {
+      if (picked.tpl) window.OrbitTemplates?.importById(picked.tpl);
+      showApp();
+    };
+    card.querySelector('#ld-launch-empty').onclick = showApp;
+  }
+
+  // ---- subscribe (local-first: stored on device) ----
+  $('#ld-subscribe').onclick = () => {
+    const input = $('#ld-email');
+    const email = input.value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      $('#ld-sub-note').textContent = 'That email doesn’t look right — try again?';
+      input.focus();
+      return;
+    }
+    let list;
+    try { list = JSON.parse(lsGet('orbit.subscribers')) || []; } catch { list = []; }
+    if (!list.includes(email)) list.push(email);
+    lsSet('orbit.subscribers', JSON.stringify(list));
+    input.value = '';
+    $('#ld-sub-note').textContent = '✨ You’re on the list. Reports will appear when Orbit grows a backend — your email stays on this device until then.';
+  };
+
+  // ---- wiring & gate ----
+  $('#ld-skip').onclick = showApp;
+  $('#ld-launch').onclick = showApp;
+  $('#ld-quiz-cta').onclick = () => $('#ld-quiz').scrollIntoView({ behavior: 'smooth' });
+  $('#app-logo').onclick = showLanding;
+
+  renderQuiz();
+  const returning = lsGet('orbit.entered') === '1' || B.getHabits().length > 0;
+  if (returning) showApp(); else showLanding();
 })();
 </script>
 </body>
